@@ -16,7 +16,7 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/60 backdrop-blur-xl">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           <div className="gradient-bg rounded-lg p-1.5">
             <Zap className="h-5 w-5 text-primary-foreground" />
@@ -26,13 +26,13 @@ const Navbar = () => {
 
         <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
               href={link.href}
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -74,14 +74,14 @@ const Navbar = () => {
           >
             <div className="container mx-auto flex flex-col gap-4 px-4 py-6">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
                   href={link.href}
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
               <div className="flex gap-3 pt-2">
                 <Link href="/dashboard" className="flex-1">

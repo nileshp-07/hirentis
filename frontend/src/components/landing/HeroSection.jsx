@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ArrowRight, Play, Mic, MessageSquare, Video } from 'lucide-react';
+import { ArrowRight, Mic, MessageSquare, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Meteors } from '@/components/ui/meteors';
