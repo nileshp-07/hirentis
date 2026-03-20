@@ -3,23 +3,38 @@ import { motion } from 'framer-motion';
 import { Video } from 'lucide-react';
 import { Card } from '../ui/card';
 
+const MESSAGE_ROLES = {
+  AI: 'ai',
+  USER: 'user',
+};
+
 const messages = [
   {
-    role: 'ai',
+    role: MESSAGE_ROLES.AI,
     text: "Hello! Let's begin your interview. Can you explain the concept of React Virtual DOM?",
   },
   {
-    role: 'user',
+    role: MESSAGE_ROLES.USER,
     text: 'React uses a virtual DOM, which is a lightweight JavaScript representation of the actual DOM. When state changes, React creates a new virtual DOM tree and diffs it against the previous one.',
   },
   {
-    role: 'ai',
+    role: MESSAGE_ROLES.AI,
     text: 'Great explanation! How does this diffing algorithm improve performance compared to direct DOM manipulation?',
   },
   {
-    role: 'user',
+    role: MESSAGE_ROLES.USER,
     text: 'Instead of updating the entire DOM, React only applies the minimal set of changes needed. This batching and selective updating is much faster than manipulating the real DOM directly.',
   },
+];
+
+const soundWaveData = [
+  { h: 22, d: 1.7 },
+  { h: 15, d: 2.1 },
+  { h: 28, d: 1.6 },
+  { h: 18, d: 2.3 },
+  { h: 26, d: 1.9 },
+  { h: 14, d: 2.4 },
+  { h: 24, d: 1.8 },
 ];
 
 const InterviewDemo = () => {
@@ -57,15 +72,7 @@ const InterviewDemo = () => {
                 <span className="text-xs text-green-500">Live</span>
               </div>
               <div className="mt-4 flex gap-1 items-end">
-                {[
-                  { h: 22, d: 1.7 },
-                  { h: 15, d: 2.1 },
-                  { h: 28, d: 1.6 },
-                  { h: 18, d: 2.3 },
-                  { h: 26, d: 1.9 },
-                  { h: 14, d: 2.4 },
-                  { h: 24, d: 1.8 },
-                ].map((val, i) => (
+                {soundWaveData.map((val, i) => (
                   <div
                     key={i}
                     className="w-1 rounded-full gradient-bg"
@@ -103,7 +110,7 @@ const InterviewDemo = () => {
                   className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : ''}`}
                 >
                   {m.role === 'ai' && (
-                    <div className="h-6 w-6 shrink-0 rounded-full gradient-bg flex items-center justify-center text-[10px] text-primary-foreground font-bold">
+                    <div className="h-6 w-6 shrink-0 rounded-full gradient-bg flex items-center justify-center text-xs text-primary-foreground font-bold">
                       AI
                     </div>
                   )}
@@ -117,7 +124,7 @@ const InterviewDemo = () => {
                 </motion.div>
               ))}
               <div className="flex gap-2">
-                <div className="h-6 w-6 shrink-0 rounded-full gradient-bg flex items-center justify-center text-[10px] text-primary-foreground font-bold">
+                <div className="h-6 w-6 shrink-0 rounded-full gradient-bg flex items-center justify-center text-xs text-primary-foreground font-bold">
                   AI
                 </div>
                 <div className="rounded-lg bg-secondary px-3 py-2 flex gap-1">
