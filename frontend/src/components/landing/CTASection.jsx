@@ -24,24 +24,24 @@ const CTASection = () => {
               with Hirentis.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="gap-2 font-semibold"
-                >
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="gap-2 font-semibold"
+              >
+                <Link href="/dashboard">
                   Start Free Interview <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
-                >
-                  Create Account
-                </Button>
-              </Link>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <Link href="/dashboard">Create Account</Link>
+              </Button>
             </div>
           </div>
         </motion.div>
