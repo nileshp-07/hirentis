@@ -85,9 +85,9 @@ const HowItWorks = () => {
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s, i) => (
+            {steps.map((step, i) => (
               <motion.div
-                key={s.title}
+                key={step.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-30px' }}
@@ -100,15 +100,17 @@ const HowItWorks = () => {
                     className="relative flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-border bg-card shadow-lg"
                   >
                     <div className="gradient-border rounded-2xl" />
-                    <s.icon className="h-7 w-7 text-primary" />
+                    <step.icon className="h-7 w-7 text-primary" />
                     <span className="absolute -top-2.5 -right-2.5 flex h-6 w-6 items-center justify-center rounded-full gradient-bg text-[10px] font-bold text-primary-foreground shadow-md">
                       {i + 1}
                     </span>
                   </motion.div>
                 </div>
 
-                <h3 className="mb-1 text-lg font-bold">{s.title}</h3>
-                <p className="mb-4 text-sm text-muted-foreground">{s.desc}</p>
+                <h3 className="mb-1 text-lg font-bold">{step.title}</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {step.desc}
+                </p>
 
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -119,12 +121,14 @@ const HowItWorks = () => {
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                      <s.preview.icon className="h-4 w-4 text-primary" />
+                      <step.preview.icon className="h-4 w-4 text-primary" />
                     </div>
                     <div className="text-left">
-                      <p className="text-xs font-semibold">{s.preview.label}</p>
+                      <p className="text-xs font-semibold">
+                        {step.preview.label}
+                      </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {s.preview.detail}
+                        {step.preview.detail}
                       </p>
                     </div>
                   </div>
