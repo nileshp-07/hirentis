@@ -41,6 +41,11 @@ const trendData = [
   { day: 'Sun', score: 92 },
 ];
 
+const CHART_HEIGHT = 180;
+const RADAR_CHART_OUTER_RADIUS = 60;
+const AXIS_FONT_SIZE_SMALL = 9;
+const AXIS_FONT_SIZE_MEDIUM = 11;
+
 const AnalyticsPreview = () => {
   return (
     <section className="py-24">
@@ -67,7 +72,7 @@ const AnalyticsPreview = () => {
         >
           <Card>
             <p className="mb-4 text-sm font-semibold">Question Scores</p>
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
               <BarChart data={scoreData}>
                 <Bar
                   dataKey="score"
@@ -86,12 +91,18 @@ const AnalyticsPreview = () => {
 
           <Card>
             <p className="mb-4 text-sm font-semibold">Skill Breakdown</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <RadarChart data={radarData} outerRadius={60}>
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
+              <RadarChart
+                data={radarData}
+                outerRadius={RADAR_CHART_OUTER_RADIUS}
+              >
                 <PolarGrid stroke="var(--color-border)" />
                 <PolarAngleAxis
                   dataKey="skill"
-                  tick={{ fontSize: 9, fill: 'var(--color-muted-foreground)' }}
+                  tick={{
+                    fontSize: AXIS_FONT_SIZE_SMALL,
+                    fill: 'var(--color-muted-foreground)',
+                  }}
                 />
                 <Radar
                   dataKey="value"
@@ -105,11 +116,14 @@ const AnalyticsPreview = () => {
 
           <Card>
             <p className="mb-4 text-sm font-semibold">Performance Trend</p>
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
               <LineChart data={trendData}>
                 <XAxis
                   dataKey="day"
-                  tick={{ fontSize: 11, fill: 'var(--color-muted-foreground)' }}
+                  tick={{
+                    fontSize: AXIS_FONT_SIZE_MEDIUM,
+                    fill: 'var(--color-muted-foreground)',
+                  }}
                   axisLine={false}
                   tickLine={false}
                 />

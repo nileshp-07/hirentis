@@ -7,6 +7,10 @@ import HowItWorks from '@/components/landing/HowItWorks';
 import StatsSection from '@/components/landing/StatsSection';
 import AnalyticsPreview from '@/components/landing/AnalyticsPreview';
 
+export const Separator = () => (
+  <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+);
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -14,13 +18,13 @@ export default function Home() {
       <HeroSection />
       <TrustedCompanies />
       <FeatureGrid />
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+      <Separator />
       <InterviewDemo />
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+      <Separator />
       <HowItWorks />
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+      <Separator />
       <StatsSection />
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+      <Separator />
       <AnalyticsPreview />
     </div>
   );
