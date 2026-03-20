@@ -6,6 +6,7 @@ import InterviewDemo from '@/components/landing/InterviewDemo';
 import HowItWorks from '@/components/landing/HowItWorks';
 import StatsSection from '@/components/landing/StatsSection';
 import AnalyticsPreview from '@/components/landing/AnalyticsPreview';
+import FAQSection from '@/components/landing/FAQSection';
 
 export const Separator = () => (
   <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -26,6 +27,8 @@ export default function Home() {
       <StatsSection />
       <Separator />
       <AnalyticsPreview />
+      <Separator />
+      <FAQSection />
     </div>
   );
 }
