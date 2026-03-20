@@ -27,7 +27,7 @@ export default function Home() {
       <StatsSection />
       <Separator />
       <AnalyticsPreview />
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
+      <Separator />
       <FAQSection />
     </div>
   );

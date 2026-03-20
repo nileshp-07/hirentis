@@ -58,14 +58,14 @@ const FAQSection = () => {
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
               <motion.div
-                key={i}
+                key={faq.q}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
               >
                 <AccordionItem
-                  value={`faq-${i}`}
+                  value={faq.q}
                   className="rounded-xl border border-border bg-card px-5 transition-colors duration-200 hover:border-primary/30 data-[state=open]:border-primary/40 data-[state=open]:shadow-[0_0_20px_-6px_var(--color-gradient-purple)/0.2]"
                 >
                   <AccordionTrigger className="text-left text-sm font-semibold hover:no-underline py-4 [&[data-state=open]>svg]:rotate-180">
