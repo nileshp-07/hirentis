@@ -7,6 +7,8 @@ import HowItWorks from '@/components/landing/HowItWorks';
 import StatsSection from '@/components/landing/StatsSection';
 import AnalyticsPreview from '@/components/landing/AnalyticsPreview';
 import FAQSection from '@/components/landing/FAQSection';
+import CTASection from '@/components/landing/CTASection';
+import Footer from '@/components/landing/Footer';
 
 export const Separator = () => (
   <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -29,6 +31,8 @@ export default function Home() {
       <AnalyticsPreview />
       <Separator />
       <FAQSection />
+      <CTASection />
+      <Footer />
     </div>
   );
 }
