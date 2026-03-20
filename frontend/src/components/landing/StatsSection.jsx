@@ -1,5 +1,5 @@
 'use client';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, animate } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 
 const stats = [
@@ -8,7 +8,6 @@ const stats = [
   { value: 150, suffix: 'k+', label: 'Candidates Prepared' },
   { value: 45, suffix: '+', label: 'Companies Hiring' },
 ];
-
 function CountUp({ target, suffix }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
@@ -16,19 +15,15 @@ function CountUp({ target, suffix }) {
 
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
-    const duration = 1500;
-    const increment = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
+
+    const controls = animate(0, target, {
+      duration: 1.5,
+      onUpdate(value) {
+        setCount(Math.floor(value));
+      },
+    });
+
+    return () => controls.stop();
   }, [inView, target]);
 
   return (
