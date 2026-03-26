@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Menu, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 
 const navLinks = [
   { label: 'Features', href: '#features' },
@@ -37,19 +38,29 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm">
-              Login
-            </Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button
-              size="sm"
-              className="gradient-bg border-0 text-primary-foreground hover:opacity-90"
-            >
-              Sign Up
-            </Button>
-          </Link>
+          <Show when="signed-out">
+            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+              <Button variant="ghost" size="sm">
+                Login
+              </Button>
+            </SignInButton>
+            <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
+              <Button
+                size="sm"
+                className="gradient-bg border-0 text-primary-foreground hover:opacity-90"
+              >
+                Sign Up
+              </Button>
+            </SignUpButton>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="mr-2">
+                Dashboard
+              </Button>
+            </Link>
+            <UserButton />
+          </Show>
         </div>
 
         <button
@@ -84,19 +95,35 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="flex gap-3 pt-2">
-                <Link href="/dashboard" className="flex-1">
-                  <Button variant="outline" className="w-full" size="sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/dashboard" className="flex-1">
-                  <Button
-                    size="sm"
-                    className="w-full gradient-bg border-0 text-primary-foreground"
-                  >
-                    Sign Up
-                  </Button>
-                </Link>
+                <Show when="signed-out">
+                  <div className="flex-1">
+                    <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                      <Button variant="outline" className="w-full" size="sm">
+                        Login
+                      </Button>
+                    </SignInButton>
+                  </div>
+                  <div className="flex-1">
+                    <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
+                      <Button
+                        size="sm"
+                        className="w-full gradient-bg border-0 text-primary-foreground"
+                      >
+                        Sign Up
+                      </Button>
+                    </SignUpButton>
+                  </div>
+                </Show>
+                <Show when="signed-in">
+                  <Link href="/dashboard" className="flex-1">
+                    <Button variant="outline" className="w-full" size="sm">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <div className="flex items-center justify-center p-2">
+                    <UserButton />
+                  </div>
+                </Show>
               </div>
             </div>
           </motion.div>
