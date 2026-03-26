@@ -300,3 +300,9 @@
   max-width: 1300px;
   margin: 0 auto;
 }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
