@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv",
     "celery",
     "redis",
-    "alembic"
+    "alembic",
+    "svix"
 ]
 requires-python = ">=3.11"
