@@ -1,11 +1,12 @@
-"use client";
-import { useState, useCallback } from "react";
-import { toast } from "sonner";
-import { initialResumes } from "@/lib/mock-data";
-import ResumeHeader from "@/components/dashboard/resume/ResumeHeader";
-import ResumeUploadArea from "@/components/dashboard/resume/ResumeUploadArea";
-import ResumeList from "@/components/dashboard/resume/ResumeList";
-import ResumeParsedDetails from "@/components/dashboard/resume/ResumeParsedDetails";
+'use client';
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { initialResumes } from '@/lib/mock-data';
+import ResumeHeader from '@/components/dashboard/resume/ResumeHeader';
+import ResumeUploadArea from '@/components/dashboard/resume/ResumeUploadArea';
+import ResumeList from '@/components/dashboard/resume/ResumeList';
+import ResumeParsedDetails from '@/components/dashboard/resume/ResumeParsedDetails';
+import dayjs from 'dayjs';
 
 export default function ResumePage() {
   const [resumes, setResumes] = useState(initialResumes);
@@ -18,22 +19,20 @@ export default function ResumePage() {
   const activeResume = resumes.find((r) => r.active);
 
   const handleSetActive = (id) => {
-    setResumes((prev) =>
-      prev.map((r) => ({ ...r, active: r.id === id }))
-    );
-    const resume = resumes.find(r => r.id === id);
+    const resume = resumes.find((r) => r.id === id);
     if (resume) {
-      toast.success("Active resume updated", {
+      setResumes((prev) => prev.map((r) => ({ ...r, active: r.id === id })));
+      toast.success('Active resume updated', {
         description: `${resume.name} is now your active resume.`,
       });
     }
   };
 
   const handleDelete = (id) => {
-    const resume = resumes.find(r => r.id === id);
-    setResumes((prev) => prev.filter((r) => r.id !== id));
+    const resume = resumes.find((r) => r.id === id);
     if (resume) {
-      toast.info("Resume deleted", {
+      setResumes((prev) => prev.filter((r) => r.id !== id));
+      toast.info('Resume deleted', {
         description: `${resume.name} has been removed.`,
       });
     }
@@ -58,13 +57,13 @@ export default function ResumePage() {
             {
               id: Date.now().toString(),
               name: file.name,
-              uploadDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+              uploadDate: dayjs(new Date()).format('DD/MM/YYYY'),
               active: prev.length === 0,
               parsedData: null,
             },
             ...prev,
           ]);
-          toast.success("Upload complete", {
+          toast.success('Upload complete', {
             description: `${file.name} has been added to your profile.`,
           });
           setTimeout(() => setUploadSuccess(false), 3000);
@@ -75,17 +74,23 @@ export default function ResumePage() {
     }, 300);
   }, []);
 
-  const processFile = useCallback((file) => {
-    if (!file) return;
+  const processFile = useCallback(
+    (file) => {
+      if (!file) return;
 
-    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-      simulateUpload(file);
-    } else {
-      toast.error("Invalid file format", {
-        description: "Please upload a valid PDF file.",
-      });
-    }
-  }, [simulateUpload]);
+      if (
+        file.type === 'application/pdf' ||
+        file.name.toLowerCase().endsWith('.pdf')
+      ) {
+        simulateUpload(file);
+      } else {
+        toast.error('Invalid file format', {
+          description: 'Please upload a valid PDF file.',
+        });
+      }
+    },
+    [simulateUpload]
+  );
 
   const handleDrop = useCallback(
     (e) => {
