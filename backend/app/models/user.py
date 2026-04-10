@@ -23,3 +23,5 @@ class User(BaseModel):
 
     # 1-to-1 relationship with Profile
     profile: Mapped["Profile"] = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    
+    resumes: Mapped[list["Resume"]] = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
