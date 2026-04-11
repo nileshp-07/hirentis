@@ -14,7 +14,30 @@ export const resumeApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: ['Resume'],
     }),
+    getResumes: builder.query({
+      query: () => "/resume/",
+      providesTags: ["Resume"],
+    }),
+    deleteResume: builder.mutation({
+      query: (id) => ({
+        url: `/resume/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Resume"],
+    }),
+    activateResume: builder.mutation({
+      query: (id) => ({
+        url: `/resume/${id}/activate`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Resume"],
+    }),
   }),
 });
 
-export const { useUploadResumeMutation } = resumeApi;
+export const { 
+  useUploadResumeMutation, 
+  useGetResumesQuery,
+  useDeleteResumeMutation,
+  useActivateResumeMutation
+} = resumeApi;

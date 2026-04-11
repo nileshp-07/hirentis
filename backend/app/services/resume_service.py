@@ -1,6 +1,7 @@
 import uuid
 import logging
 from fastapi import HTTPException
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.resume import Resume
 from app.utils.file_parser import save_and_extract_text_from_file
@@ -59,3 +60,49 @@ async def process_resume_upload(db: Session, user_id: uuid.UUID, file):
     db.refresh(new_resume)
 
     return new_resume
+
+
+def get_user_resumes(user_id: uuid.UUID, db: Session):
+    return db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.created_at.desc()).all()
+
+def get_user_resume(
+    db: Session, resume_id: uuid.UUID, user_id: uuid.UUID
+) -> Optional["Resume"]:
+    return (
+        db.query(Resume)
+        .filter(
+            Resume.id == resume_id,
+            Resume.user_id == user_id,
+        )
+        .first()
+    )
+
+
+def delete_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
+    resume = get_user_resume(db, resume_id, user_id)
+
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    db.delete(resume)
+    db.commit()
+    return True
+
+def set_active_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
+    resume = get_user_resume(db, resume_id, user_id)
+
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    # deactivate all active resumes for user (single query)
+    db.query(Resume).filter(
+        Resume.user_id == user_id,
+        Resume.is_active.is_(True),
+    ).update(
+        {Resume.is_active: False},
+        synchronize_session=False,
+    )
+
+    resume.is_active = True
+    db.commit()
+    return True
