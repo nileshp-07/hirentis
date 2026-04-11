@@ -62,7 +62,7 @@ async def process_resume_upload(db: Session, user_id: uuid.UUID, file):
     return new_resume
 
 
-async def get_user_resumes(user_id, db: Session):
+def get_user_resumes(user_id: uuid.UUID, db: Session):
     return db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.created_at.desc()).all()
 
 def get_user_resume(
@@ -78,7 +78,7 @@ def get_user_resume(
     )
 
 
-async def delete_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
+def delete_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
     resume = get_user_resume(db, resume_id, user_id)
 
     if not resume:
@@ -88,7 +88,7 @@ async def delete_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
     db.commit()
     return True
 
-async def set_active_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
+def set_active_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
     resume = get_user_resume(db, resume_id, user_id)
 
     if not resume:
