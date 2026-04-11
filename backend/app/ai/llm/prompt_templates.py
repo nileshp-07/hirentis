@@ -4,6 +4,7 @@ Only return the JSON. Do not include any explanation.
 
 Output Schema:
 {{
+  "is_resume": true, // Set to false if the text is NOT a professional resume (e.g. it's random text, a generic document, a book, etc.)
   "skills": ["List of technical and soft skills"],
   "experience_years": 0,
   "projects": [

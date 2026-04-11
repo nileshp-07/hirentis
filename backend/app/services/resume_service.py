@@ -1,5 +1,6 @@
 import uuid
 import logging
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.resume import Resume
 from app.utils.file_parser import save_and_extract_text_from_file
@@ -33,6 +34,12 @@ async def process_resume_upload(db: Session, user_id: uuid.UUID, file):
     file_path, text = await save_and_extract_text_from_file(file)
 
     parsed_json = await parse_resume_content(text)
+
+    if not parsed_json.get("is_resume", True):
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded file does not appear to be a professional resume. Please upload a valid resume."
+        )
 
     db.query(Resume).filter(Resume.user_id == user_id, Resume.is_active == True).update(
         {"is_active": False}
