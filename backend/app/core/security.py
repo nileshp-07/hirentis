@@ -6,7 +6,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.user import User
-from app.core.config import settings
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -30,13 +29,15 @@ class ClerkAuth:
                     cls._jwks = response.json()
             except Exception as e:
                 logger.error(f"Failed to fetch JWKS from Clerk: {e}")
-                raise HTTPException(status_code=500, detail="Identity provider unavailable")
+                raise HTTPException(
+                    status_code=500, detail="Identity provider unavailable"
+                )
         return cls._jwks
 
 
 async def get_current_user(
     auth: HTTPAuthorizationCredentials = Security(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     token = auth.credentials
     jwks = await ClerkAuth.get_jwks()
@@ -58,7 +59,7 @@ async def get_current_user(
             key,
             algorithms=["RS256"],
             issuer=CLERK_ISSUER,
-            options={"verify_aud": False}
+            options={"verify_aud": False},
         )
 
         clerk_user_id = payload.get("sub")

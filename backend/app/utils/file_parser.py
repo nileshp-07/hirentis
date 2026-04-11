@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = "storage/resumes"
 
+
 async def save_and_extract_text_from_file(file: UploadFile) -> tuple[str, str]:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -30,19 +31,23 @@ async def save_and_extract_text_from_file(file: UploadFile) -> tuple[str, str]:
             loader = PyPDFLoader(file_path)
             docs = loader.load()
             text = "\n".join([doc.page_content for doc in docs])
-            
+
         elif file_extension in [".docx", ".doc"]:
             loader = Docx2txtLoader(file_path)
             docs = loader.load()
             text = "\n".join([doc.page_content for doc in docs])
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format.")
-            
+
     except Exception as e:
         logger.error(f"LangChain extraction error for {file.filename}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to process document content.")
+        raise HTTPException(
+            status_code=500, detail="Failed to process document content."
+        )
 
     if not text.strip():
-        raise HTTPException(status_code=400, detail="The file appears to be empty or unreadable.")
+        raise HTTPException(
+            status_code=400, detail="The file appears to be empty or unreadable."
+        )
 
     return file_path, text

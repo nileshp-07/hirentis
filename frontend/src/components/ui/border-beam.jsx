@@ -1,15 +1,15 @@
-"use client";
-import { motion } from "motion/react";
+'use client';
+import { motion } from 'motion/react';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 export const BorderBeam = ({
   className,
   size = 50,
   delay = 0,
   duration = 6,
-  colorFrom = "#ffaa40",
-  colorTo = "#9c40ff",
+  colorFrom = '#ffaa40',
+  colorTo = '#9c40ff',
   transition,
   style,
   reverse = false,
@@ -19,23 +19,24 @@ export const BorderBeam = ({
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-0 rounded-[inherit] border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]",
+        'pointer-events-none absolute inset-0 rounded-[inherit] border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]',
         className
       )}
       style={{
         borderWidth: borderWidth,
-      }}>
+      }}
+    >
       <motion.div
         className={cn(
-          "absolute aspect-square",
-          "bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent"
+          'absolute aspect-square',
+          'bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent'
         )}
         style={{
           width: size,
           offsetPath: `rect(0 auto auto 0 round ${size}px)`,
-          "--color-from": colorFrom,
-          "--color-to": colorTo,
-          ...style
+          '--color-from': colorFrom,
+          '--color-to': colorTo,
+          ...style,
         }}
         initial={{ offsetDistance: `${initialOffset}%` }}
         animate={{
@@ -45,11 +46,12 @@ export const BorderBeam = ({
         }}
         transition={{
           repeat: Infinity,
-          ease: "linear",
+          ease: 'linear',
           duration,
           delay: -delay,
           ...transition,
-        }} />
+        }}
+      />
     </div>
   );
-}
+};

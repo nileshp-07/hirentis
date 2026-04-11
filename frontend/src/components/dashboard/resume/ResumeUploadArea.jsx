@@ -1,8 +1,8 @@
-import { useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Check, Upload } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
+import { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileText, Check, Upload } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 
 export default function ResumeUploadArea({
   isDragging,
@@ -11,7 +11,7 @@ export default function ResumeUploadArea({
   handleFileSelect,
   uploading,
   uploadSuccess,
-  uploadProgress
+  uploadProgress,
 }) {
   const inputRef = useRef(null);
 
@@ -28,10 +28,11 @@ export default function ResumeUploadArea({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`relative rounded-xl border-2 border-dashed p-10 text-center transition-all duration-300 ${isDragging
-          ? "border-primary bg-primary/5"
-          : "border-border bg-card hover:border-muted-foreground/30"
-          }`}
+        className={`relative rounded-xl border-2 border-dashed p-10 text-center transition-all duration-300 ${
+          isDragging
+            ? 'border-primary bg-primary/5'
+            : 'border-border bg-card hover:border-muted-foreground/30'
+        }`}
       >
         <AnimatePresence mode="wait">
           {uploading ? (
@@ -45,11 +46,15 @@ export default function ResumeUploadArea({
               <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <FileText className="h-6 w-6 text-primary animate-pulse" />
               </div>
-              <p className="text-sm font-medium text-foreground">Uploading resume…</p>
+              <p className="text-sm font-medium text-foreground">
+                Uploading resume…
+              </p>
               <div className="max-w-xs mx-auto">
                 <Progress value={uploadProgress} className="h-2" />
               </div>
-              <p className="text-xs text-muted-foreground">{Math.round(uploadProgress)}%</p>
+              <p className="text-xs text-muted-foreground">
+                {Math.round(uploadProgress)}%
+              </p>
             </motion.div>
           ) : uploadSuccess ? (
             <motion.div
@@ -62,12 +67,14 @@ export default function ResumeUploadArea({
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 className="mx-auto h-12 w-12 rounded-full bg-primary/15 flex items-center justify-center"
               >
                 <Check className="h-6 w-6 text-primary" />
               </motion.div>
-              <p className="text-sm font-medium text-primary">Resume uploaded successfully</p>
+              <p className="text-sm font-medium text-primary">
+                Resume uploaded successfully
+              </p>
             </motion.div>
           ) : (
             <motion.div
@@ -79,7 +86,7 @@ export default function ResumeUploadArea({
             >
               <motion.div
                 animate={isDragging ? { scale: 1.15 } : { scale: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 className="mx-auto h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center"
               >
                 <Upload className="h-7 w-7 text-primary" />
@@ -104,7 +111,9 @@ export default function ResumeUploadArea({
                 className="hidden"
                 onChange={handleFileSelect}
               />
-              <p className="text-xs text-muted-foreground">Supported format: PDF</p>
+              <p className="text-xs text-muted-foreground">
+                Supported format: PDF
+              </p>
             </motion.div>
           )}
         </AnimatePresence>

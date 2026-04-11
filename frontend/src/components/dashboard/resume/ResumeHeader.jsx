@@ -1,7 +1,7 @@
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { Star } from "lucide-react";
-import PageHeader from "@/components/layout/PageHeader";
+import { motion } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Star } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function ResumeHeader({ activeResume }) {
   return (
@@ -10,7 +10,10 @@ export default function ResumeHeader({ activeResume }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <PageHeader title="Resume" subtitle="Upload and manage your resume. Your active resume will be used to personalize AI interviews." />
+      <PageHeader
+        title="Resume"
+        subtitle="Upload and manage your resume. Your active resume will be used to personalize AI interviews."
+      />
       {activeResume && (
         <motion.div
           initial={{ opacity: 0 }}

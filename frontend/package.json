@@ -41,12 +41,13 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
+    "src/**/*.{js,jsx,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,css,md}": [
-      "prettier --write"
+    "../backend/**/*.py": [
+      "uv --project ../backend run ruff check --fix",
+      "uv --project ../backend run ruff format"
     ]
   }
 }

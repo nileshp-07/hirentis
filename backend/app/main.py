@@ -14,9 +14,11 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/api/v1")
 
+
 @app.get("/")
 def read_root() -> dict:
     return {"message": "Welcome to the FastAPI Backend"}
+
 
 @app.get("/health")
 def health_check() -> dict:

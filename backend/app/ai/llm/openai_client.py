@@ -8,13 +8,14 @@ logger = logging.getLogger(__name__)
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
+
 async def get_chat_completion(
     messages: List[Dict[str, str]],
     model: str = "gpt-4o-mini",
     temperature: float = 0.2,
     max_tokens: Optional[int] = None,
     response_format: Optional[str] = "text",
-    stream: bool = False
+    stream: bool = False,
 ) -> Union[str, Dict[str, Any]]:
     if not settings.OPENAI_API_KEY:
         logger.error("OpenAI API Key is missing from configuration.")
@@ -25,7 +26,7 @@ async def get_chat_completion(
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "stream": stream
+        "stream": stream,
     }
 
     if response_format == "json":

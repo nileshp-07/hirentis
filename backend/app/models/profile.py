@@ -1,15 +1,20 @@
 import uuid
-from typing import Optional, List
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Text, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
-from app.models.user import User
+
+if TYPE_CHECKING:
+    from app.models.user import User
+
 
 class Profile(BaseModel):
     __tablename__ = "profiles"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     experience_years: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

@@ -3,10 +3,12 @@ from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
+
 class ProjectSchema(BaseModel):
     name: str
     description: Optional[str] = None
     technologies: List[str] = Field(default_factory=list)
+
 
 class WorkExperienceSchema(BaseModel):
     company: str
@@ -14,11 +16,13 @@ class WorkExperienceSchema(BaseModel):
     duration: Optional[str] = None
     description: Optional[str] = None
 
+
 class EducationSchema(BaseModel):
     institution: str
     degree: Optional[str] = None
     field_of_study: Optional[str] = None
     graduation_year: Optional[str] = None
+
 
 class ParsedData(BaseModel):
     skills: List[str] = Field(default_factory=list)
@@ -27,6 +31,7 @@ class ParsedData(BaseModel):
     work_experience: Optional[List[WorkExperienceSchema]] = None
     education: Optional[List[EducationSchema]] = None
     summary: Optional[str] = None
+
 
 class ResumeResponse(BaseModel):
     id: uuid.UUID

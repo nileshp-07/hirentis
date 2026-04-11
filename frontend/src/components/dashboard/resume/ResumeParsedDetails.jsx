@@ -1,7 +1,7 @@
-import { motion } from "framer-motion";
-import { Code, Briefcase, FolderOpen, Eye } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { motion } from 'framer-motion';
+import { Code, Briefcase, FolderOpen, Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 export default function ResumeParsedDetails({ activeResume }) {
   if (!activeResume?.parsedData) return null;
@@ -40,10 +40,16 @@ export default function ResumeParsedDetails({ activeResume }) {
               <Briefcase className="h-4 w-4 text-primary" />
               Experience
             </div>
-            <p className="text-2xl font-bold">{activeResume.parsedData.experience}</p>
+            <p className="text-2xl font-bold">
+              {activeResume.parsedData.experience}
+            </p>
             <div className="flex flex-wrap gap-2">
               {activeResume.parsedData.experienceAreas.map((area) => (
-                <Badge key={area} variant="outline" className="text-xs text-muted-foreground">
+                <Badge
+                  key={area}
+                  variant="outline"
+                  className="text-xs text-muted-foreground"
+                >
                   {area}
                 </Badge>
               ))}
@@ -65,7 +71,9 @@ export default function ResumeParsedDetails({ activeResume }) {
                   className="rounded-lg border border-border bg-secondary/40 p-3 transition-colors hover:border-primary/30"
                 >
                   <p className="text-sm font-medium">{project.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{project.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {project.desc}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -91,6 +99,6 @@ export default function ResumeParsedDetails({ activeResume }) {
           </div>
         </Card>
       </div>
-    </motion.div >
+    </motion.div>
   );
 }
