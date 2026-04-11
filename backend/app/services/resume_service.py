@@ -1,18 +1,22 @@
 import uuid
+import logging
 from sqlalchemy.orm import Session
 from app.models.resume import Resume
 from app.utils.file_parser import save_and_extract_text_from_file
 from app.ai.llm.openai_client import get_chat_completion
 from app.ai.llm.prompt_templates import RESUME_PARSING_PROMPT
 
+logger = logging.getLogger(__name__)
+
 async def parse_resume_content(text: str) -> dict:
     try:
         messages = [
             {"role": "system", "content": "You are a specialized resume parsing agent."},
-            {"role": "user", "content": RESUME_PARSING_PROMPT.format(text = text)}
+            {"role": "user", "content": RESUME_PARSING_PROMPT.format(text=text)}
         ]
         return await get_chat_completion(messages, response_format="json")
     except Exception as e:
+        logger.error(f"Resume parsing failed: {str(e)}")
         return {
             "skills": [],
             "experience_years": 0,

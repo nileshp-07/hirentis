@@ -1,7 +1,10 @@
 import json
+import logging
 from typing import Any, Dict, List, Optional, Union
 from openai import AsyncOpenAI
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -14,6 +17,7 @@ async def get_chat_completion(
     stream: bool = False
 ) -> Union[str, Dict[str, Any]]:
     if not settings.OPENAI_API_KEY:
+        logger.error("OpenAI API Key is missing from configuration.")
         raise ValueError("OPENAI_API_KEY is not configured.")
 
     call_args = {
@@ -27,7 +31,11 @@ async def get_chat_completion(
     if response_format == "json":
         call_args["response_format"] = {"type": "json_object"}
 
-    response = await client.chat.completions.create(**call_args)
+    try:
+        response = await client.chat.completions.create(**call_args)
+    except Exception as e:
+        logger.error(f"OpenAI API call failed: {str(e)}")
+        raise e
 
     if stream:
         return response
@@ -38,7 +46,7 @@ async def get_chat_completion(
         try:
             return json.loads(content)
         except json.JSONDecodeError:
-            print(f"Warning: OpenAI returned invalid JSON content: {content}")
-            return {"error": "Invalid API response format", "raw": content}
+            logger.warning(f"OpenAI returned invalid JSON: {content[:100]}...")
+            return {"error": "Invalid API response format"}
 
     return content
