@@ -5,9 +5,12 @@ from pydantic import BaseModel, Field
 
 
 class ProjectSchema(BaseModel):
-    name: str
+    title: str
     description: Optional[str] = None
-    technologies: List[str] = Field(default_factory=list)
+    tech_stack: List[str] = Field(default_factory=list, alias="technologies")
+    
+    class Config:
+        populate_by_name = True
 
 
 class WorkExperienceSchema(BaseModel):
@@ -20,6 +23,8 @@ class WorkExperienceSchema(BaseModel):
 class EducationSchema(BaseModel):
     institution: str
     degree: Optional[str] = None
+    duration: Optional[str] = None
+    description: Optional[str] = None
     field_of_study: Optional[str] = None
     graduation_year: Optional[str] = None
 
