@@ -11,6 +11,15 @@ dependencies = [
     "celery",
     "redis",
     "alembic",
-    "svix"
+    "svix",
+    "openai>=2.31.0",
+    "langchain-community>=0.4.1",
+    "pypdf>=6.9.2",
+    "docx2txt>=0.9",
+    "python-multipart>=0.0.26",
+    "aiofiles>=25.1.0",
+    "python-jose[cryptography]>=3.5.0",
+    "httpx>=0.28.1",
+    "pyjwt>=2.12.1",
 ]
 requires-python = ">=3.11"
