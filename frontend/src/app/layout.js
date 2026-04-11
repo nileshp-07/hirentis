@@ -2,6 +2,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
+import { StoreProvider } from '@/redux/StoreProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,7 +26,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </ClerkProvider>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>
