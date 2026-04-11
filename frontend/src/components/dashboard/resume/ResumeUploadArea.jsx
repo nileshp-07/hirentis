@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Check, Upload } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/Loader';
 
 export default function ResumeUploadArea({
   isDragging,
@@ -11,7 +11,6 @@ export default function ResumeUploadArea({
   handleFileSelect,
   uploading,
   uploadSuccess,
-  uploadProgress,
 }) {
   const inputRef = useRef(null);
 
@@ -41,19 +40,11 @@ export default function ResumeUploadArea({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="space-y-4"
+              className="py-4"
             >
-              <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <FileText className="h-6 w-6 text-primary animate-pulse" />
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Uploading resume…
-              </p>
-              <div className="max-w-xs mx-auto">
-                <Progress value={uploadProgress} className="h-2" />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {Math.round(uploadProgress)}%
+              <Loader text="AI is parsing your resume..." size="md" />
+              <p className="text-xs text-muted-foreground mt-2">
+                Extracting skills and professional experience
               </p>
             </motion.div>
           ) : uploadSuccess ? (

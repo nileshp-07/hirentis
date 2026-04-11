@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { initialResumes } from '@/lib/mock-data';
+import { useUploadResumeMutation } from '@/redux/api/resumeApi';
 import ResumeHeader from '@/components/dashboard/resume/ResumeHeader';
 import ResumeUploadArea from '@/components/dashboard/resume/ResumeUploadArea';
 import ResumeList from '@/components/dashboard/resume/ResumeList';
@@ -11,10 +12,9 @@ import dayjs from 'dayjs';
 export default function ResumePage() {
   const [resumes, setResumes] = useState(initialResumes);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [previewResume, setPreviewResume] = useState(null);
+  const [uploadResume, { isLoading: uploading, isSuccess: uploadSuccess }] =
+    useUploadResumeMutation();
 
   const activeResume = resumes.find((r) => r.active);
 
@@ -38,58 +38,47 @@ export default function ResumePage() {
     }
   };
 
-  const simulateUpload = useCallback((file) => {
-    if (!file) return;
-    setUploading(true);
-    setUploadProgress(0);
-    setUploadSuccess(false);
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 25;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setUploadProgress(100);
-        setTimeout(() => {
-          setUploading(false);
-          setUploadSuccess(true);
-          setResumes((prev) => [
-            {
-              id: Date.now().toString(),
-              name: file.name,
-              uploadDate: dayjs(new Date()).format('DD/MM/YYYY'),
-              active: prev.length === 0,
-              parsedData: null,
-            },
-            ...prev,
-          ]);
-          toast.success('Upload complete', {
-            description: `${file.name} has been added to your profile.`,
-          });
-          setTimeout(() => setUploadSuccess(false), 3000);
-        }, 500);
-      } else {
-        setUploadProgress(progress);
-      }
-    }, 300);
-  }, []);
-
   const processFile = useCallback(
-    (file) => {
+    async (file) => {
       if (!file) return;
 
-      if (
-        file.type === 'application/pdf' ||
-        file.name.toLowerCase().endsWith('.pdf')
-      ) {
-        simulateUpload(file);
+      const validFiles = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (validFiles.includes(file.type) || ['pdf', 'docx'].includes(ext)) {
+        try {
+          const result = await uploadResume(file).unwrap();
+
+          setResumes((prev) => [
+            {
+              id: result.id,
+              name: result.title,
+              uploadDate: dayjs(result.created_at).format('DD/MM/YYYY'),
+              active: true,
+              parsedData: result.parsed_data,
+            },
+            ...prev.map((r) => ({ ...r, active: false })),
+          ]);
+
+          toast.success('Upload complete', {
+            description: `${file.name} has been parsed successfully.`,
+          });
+        } catch (err) {
+          toast.error('Upload failed', {
+            description:
+              err.data?.detail || 'Something went wrong during parsing.',
+          });
+        }
       } else {
         toast.error('Invalid file format', {
-          description: 'Please upload a valid PDF file.',
+          description: 'Please upload a valid PDF or DOCX file.',
         });
       }
     },
-    [simulateUpload]
+    [uploadResume]
   );
 
   const handleDrop = useCallback(
@@ -121,7 +110,6 @@ export default function ResumePage() {
         handleFileSelect={handleFileSelect}
         uploading={uploading}
         uploadSuccess={uploadSuccess}
-        uploadProgress={uploadProgress}
       />
 
       <ResumeList
