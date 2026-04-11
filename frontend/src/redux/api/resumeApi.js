@@ -17,4 +17,4 @@ export const resumeApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useUploadResumeMutation, useGetLatestResumeQuery } = resumeApi;
+export const { useUploadResumeMutation } = resumeApi;
