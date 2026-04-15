@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { motion } from 'framer-motion';
 
 export const ScoreRing = ({ score }) => {
+  const gradientId = useId();
   const radius = 32;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 10) * circumference;
@@ -10,7 +12,7 @@ export const ScoreRing = ({ score }) => {
       <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80" fill="none">
         <defs>
           <linearGradient
-            id={`score-ring-${score}`}
+            id={gradientId}
             x1="0"
             y1="0"
             x2="80"
@@ -32,7 +34,7 @@ export const ScoreRing = ({ score }) => {
           cx="40"
           cy="40"
           r={radius}
-          stroke={`url(#score-ring-${score})`}
+          stroke={`url(#${gradientId})`}
           strokeWidth="8"
           strokeLinecap="round"
           initial={{

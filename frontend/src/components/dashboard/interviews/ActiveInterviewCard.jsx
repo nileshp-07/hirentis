@@ -34,7 +34,8 @@ export const ActiveInterviewCard = ({ interview, index }) => (
       className="p-5 transition-all hover:y-[-4px] glow-card cursor-default"
       gradientBorder
     >
-      <div className="flex justify-between my-2">
+      <div className="flex flex-col lg:flex-row justify-between gap-6 my-2">
+        {' '}
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -71,8 +72,8 @@ export const ActiveInterviewCard = ({ interview, index }) => (
             </span>
           </div>
         </div>
-
-        <div className="min-w-full space-y-3 lg:min-w-[270px] lg:max-w-[270px]">
+        <div className="w-full space-y-3 lg:w-[270px] lg:shrink-0">
+          {' '}
           {interview.status === 'pending' ? (
             <PendingLoader />
           ) : (
