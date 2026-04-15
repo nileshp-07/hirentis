@@ -5,10 +5,10 @@ import {
   useUploadResumeMutation,
   useGetResumesQuery,
   useDeleteResumeMutation,
-  useActivateResumeMutation
+  useActivateResumeMutation,
 } from '@/redux/api/resumeApi';
 import { useAuth } from '@clerk/nextjs';
-import ResumeHeader from '@/components/dashboard/resume/ResumeHeader';
+import PageHeader from '@/components/layout/PageHeader';
 import ResumeUploadArea from '@/components/dashboard/resume/ResumeUploadArea';
 import ResumeList from '@/components/dashboard/resume/ResumeList';
 import ResumeParsedDetails from '@/components/dashboard/resume/ResumeParsedDetails';
@@ -21,19 +21,23 @@ export default function ResumePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [previewResume, setPreviewResume] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null });
-  const { data: rawResumes = [], isLoading: fetching } = useGetResumesQuery(undefined, {
-    skip: !isLoaded || !userId,
-  });
-  const [uploadResume, { isLoading: uploading, isSuccess: uploadSuccess }] = useUploadResumeMutation();
+  const { data: rawResumes = [], isLoading: fetching } = useGetResumesQuery(
+    undefined,
+    {
+      skip: !isLoaded || !userId,
+    }
+  );
+  const [uploadResume, { isLoading: uploading, isSuccess: uploadSuccess }] =
+    useUploadResumeMutation();
   const [deleteResume] = useDeleteResumeMutation();
   const [activateResume] = useActivateResumeMutation();
 
-  const resumes = rawResumes.map(r => ({
+  const resumes = rawResumes.map((r) => ({
     id: r.id,
     name: r.title,
     uploadDate: dayjs(r.created_at).format('DD/MM/YYYY'),
     active: r.is_active,
-    parsedData: r.parsed_data
+    parsedData: r.parsed_data,
   }));
 
   const activeResume = resumes.find((r) => r.active);
@@ -122,7 +126,10 @@ export default function ResumePage() {
 
   return (
     <div className="space-y-8">
-      <ResumeHeader activeResume={activeResume} />
+      <PageHeader
+        title="Resume Management"
+        subtitle="Upload and manage your resumes to personalize your AI interview simulations."
+      />
 
       <ResumeUploadArea
         isDragging={isDragging}
