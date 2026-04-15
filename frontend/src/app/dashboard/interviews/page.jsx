@@ -1,19 +1,134 @@
+'use client';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Plus, Sparkles, CircleDashed, LoaderCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/layout/PageHeader';
-import { Card } from '@/components/ui/card';
+import { interviewRecords } from './interviewsData';
+import { ActiveInterviewCard } from '@/components/dashboard/interviews/ActiveInterviewCard';
+import { CompletedInterviewCard } from '@/components/dashboard/interviews/CompletedInterviewCard';
 
-export default function InterviewPage() {
+export default function InterviewsPage() {
+  const activeInterviews = interviewRecords.filter(
+    (interview) => interview.status !== 'completed'
+  );
+  const completedInterviews = interviewRecords.filter(
+    (interview) => interview.status === 'completed'
+  );
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
       <PageHeader
         title="Interviews"
-        subtitle={`Practice answering questions tracked by AI.`}
+        subtitle="Create, manage, and scale your technical prowess with AI-driven interview simulations."
+        buttons={
+          <Button
+            asChild
+            className="gradient-bg text-primary-foreground hover:opacity-90 shadow-md"
+          >
+            <Link href="/dashboard/interviews/create">
+              <Plus className="h-4 w-4" />
+              Create Interview
+            </Link>
+          </Button>
+        }
       />
 
-      <Card className="p-6">
-        <p className="text-muted-foreground">
-          Interview functionality coming soon...
-        </p>
-      </Card>
-    </div>
+      <section className="grid gap-8 xl:grid-cols-[1.7fr_1fr]">
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h2 className="font-semibold text-primary/80">Ongoing Sessions</h2>
+            <p className="text-sm text-muted-foreground">
+              Continue or start your upcoming interviews.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {activeInterviews.map((interview, index) => (
+              <ActiveInterviewCard
+                key={interview.id}
+                interview={interview}
+                index={index}
+              />
+            ))}
+            {activeInterviews.length === 0 && (
+              <div className="p-12 text-center border border-dashed rounded-2xl bg-secondary/10 italic text-muted-foreground text-sm">
+                No active interviews found. Start your first session now.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h2 className="font-semibold text-primary/80">
+              Performance History
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Review your past evaluation results.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            {completedInterviews.map((interview, index) => (
+              <CompletedInterviewCard
+                key={interview.id}
+                interview={interview}
+                index={index}
+              />
+            ))}
+            {completedInterviews.length === 0 && (
+              <div className="p-8 text-center border border-dashed rounded-2xl bg-secondary/10 italic text-muted-foreground text-xs">
+                Your history is currently empty.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3 pt-4">
+        {[
+          {
+            icon: CircleDashed,
+            title: 'Adaptive Builder',
+            description:
+              'Dynamic interview flows tailored for technical and behavioral depth.',
+          },
+          {
+            icon: Sparkles,
+            title: 'Resume-aware Intelligence',
+            description:
+              'Personalized question banks based on your active resume strengths.',
+          },
+          {
+            icon: LoaderCircle,
+            title: 'Continuity Shield',
+            description:
+              'Pick up exactly where you left off without losing session context.',
+          },
+        ].map((item, index) => (
+          <motion.div
+            key={item.title}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 + index * 0.08 }}
+            whileHover={{ y: -3 }}
+            className="rounded-2xl border border-border bg-card p-5 hover:border-primary/20 transition-colors"
+          >
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <item.icon className="h-5 w-5" />
+            </div>
+            <h3 className="font-bold text-sm">{item.title}</h3>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              {item.description}
+            </p>
+          </motion.div>
+        ))}
+      </section>
+    </motion.div>
   );
 }
