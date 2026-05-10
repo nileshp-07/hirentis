@@ -43,7 +43,7 @@ export const useInterviews = () => {
 
   const handleAddTech = useCallback(() => {
     const value = techInput.trim();
-    if (!value || form.techStack.includes(value)) return;
+    if (!value || form.techStack.some(t => t.toLowerCase() === value.toLowerCase())) return;
     setForm((prev) => ({ ...prev, techStack: [...prev.techStack, value] }));
     setTechInput('');
   }, [techInput, form.techStack]);
