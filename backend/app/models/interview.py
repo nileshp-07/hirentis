@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.resume import Resume
 
-from sqlalchemy import String, Integer, Text, ForeignKey, Enum as SqlEnum
+from sqlalchemy import String, Integer, Text, ForeignKey, Enum as SqlEnum, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,10 +14,10 @@ from app.models.base import BaseModel
 
 
 class InterviewType(str, Enum):
-    TECHNICAL = "Technical"
+    TECHNICAL = "TECHNICAL"
     HR = "HR"
-    SYSTEM_DESIGN = "System Design"
-    BEHAVIORAL = "Behavioral"
+    SYSTEM_DESIGN = "SYSTEM_DESIGN"
+    BEHAVIORAL = "BEHAVIORAL"
 
 
 class Interview(BaseModel):
@@ -34,12 +34,12 @@ class Interview(BaseModel):
     )
 
     interview_type: Mapped[InterviewType] = mapped_column(
-        SqlEnum(InterviewType),
+        SqlEnum(InterviewType, name="interviewtype"),
         default=InterviewType.TECHNICAL,
         nullable=False,
     )
 
-    total_question: Mapped[int] = mapped_column(Integer, default=5)
+    total_questions: Mapped[int] = mapped_column(Integer, default=5)
 
     created_by: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
@@ -49,7 +49,7 @@ class Interview(BaseModel):
         ForeignKey("resumes.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
-    interview_overview: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    interview_overview: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     user: Mapped["User"] = relationship("User", backref="interviews")
     resume: Mapped[Optional["Resume"]] = relationship("Resume")

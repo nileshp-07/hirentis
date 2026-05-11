@@ -1,8 +1,8 @@
 """Add interview model
 
-Revision ID: 2788c6fb2f0a
+Revision ID: ac643faf4849
 Revises: 6e4328be86c8
-Create Date: 2026-05-11 22:18:53.237598
+Create Date: 2026-05-11 22:30:53.707769
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "2788c6fb2f0a"
+revision: str = "ac643faf4849"
 down_revision: Union[str, None] = "6e4328be86c8"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -35,10 +35,10 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
-        sa.Column("total_question", sa.Integer(), nullable=False),
+        sa.Column("total_questions", sa.Integer(), nullable=False),
         sa.Column("created_by", sa.Uuid(), nullable=False),
         sa.Column("resume_id", sa.Uuid(), nullable=True),
-        sa.Column("interview_overview", sa.Text(), nullable=True),
+        sa.Column("interview_overview", sa.JSON(), nullable=True),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "created_at",
