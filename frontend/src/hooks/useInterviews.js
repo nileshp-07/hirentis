@@ -86,7 +86,7 @@ export const useInterviews = () => {
     try {
       const payload = {
         ...form,
-        total_questions: parseInt(form.total_questions),
+        total_questions: parseInt(form.total_questions, 10) || 5,
       };
 
       if (isEditing) {
