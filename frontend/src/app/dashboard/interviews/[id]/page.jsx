@@ -13,7 +13,7 @@ import WarmupScreen from "@/components/session/WarmupScreen";
 import { useGetInterviewQuery } from "@/redux/api/interviewApi";
 
 const metadataItems = (interview) => [
-  { icon: CalendarDays, label: "Created At", value: new Date(interview.created_at).toLocaleDateString() },
+  { icon: CalendarDays, label: "Created At", value: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : "TBD" },
   { icon: MapPin, label: "Location", value: "Remote" },
   { icon: Wrench, label: "Type", value: interview.interview_type },
   { icon: Clock3, label: "Duration", value: interview.interview_overview?.estimated_duration || "45 mins" },
