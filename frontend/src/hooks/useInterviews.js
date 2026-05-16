@@ -1,10 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import {
-  getInterviewById,
-  getResumeById,
-  resumeOptions,
-} from '@/app/dashboard/interviews/interviewsData';
+import { useGetInterviewQuery, useCreateInterviewMutation, useUpdateInterviewMutation } from '@/redux/api/interviewApi';
+import { useGetResumesQuery } from '@/redux/api/resumeApi';
 
 const STEPS = ['Basic Info', 'Resume Selection', 'Job Description'];
 const DEFAULT_JD =
@@ -15,43 +12,69 @@ export const useInterviews = () => {
   const params = useParams();
   const id = params?.id;
 
-  const editingInterview = id ? getInterviewById(id) : null;
-  const isEditing = Boolean(editingInterview);
+  const { data: editingInterview, isLoading: isFetching } = useGetInterviewQuery(id, {
+    skip: !id,
+  });
+  const { data: resumes = [] } = useGetResumesQuery();
+
+  const [createInterview, { isLoading: isCreating }] = useCreateInterviewMutation();
+  const [updateInterview, { isLoading: isUpdating }] = useUpdateInterviewMutation();
+
+  const isEditing = Boolean(id);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [techInput, setTechInput] = useState('');
   const [resumePreviewId, setResumePreviewId] = useState(null);
 
   const [form, setForm] = useState({
-    title: editingInterview?.title ?? '',
-    role: editingInterview?.role ?? 'Frontend Engineer',
-    experience: editingInterview?.experience ?? '2 years',
-    type: editingInterview?.type ?? 'Technical',
-    totalQuestions: String(editingInterview?.totalQuestions ?? 10),
-    techStack: editingInterview?.techStack ?? ['React', 'Next.js', 'Tailwind'],
-    selectedResumeId:
-      editingInterview?.selectedResumeId ??
-      resumeOptions.find((resume) => resume.active)?.id ??
-      resumeOptions[0].id,
-    jobDescription: editingInterview?.jobDescription ?? DEFAULT_JD,
+    title: '',
+    role: 'Frontend Engineer',
+    experience_level: '2 years',
+    interview_type: 'TECHNICAL',
+    total_questions: '10',
+    tech_stack: ['React', 'Next.js', 'Tailwind'],
+    resume_id: '',
+    job_description: DEFAULT_JD,
   });
 
+  useEffect(() => {
+    if (editingInterview) {
+      setForm({
+        title: editingInterview.title || '',
+        role: editingInterview.role || '',
+        experience_level: editingInterview.experience_level || '2 years',
+        interview_type: editingInterview.interview_type || 'TECHNICAL',
+        total_questions: String(editingInterview.total_questions || 10),
+        tech_stack: editingInterview.tech_stack || [],
+        resume_id: editingInterview.resume_id || '',
+        job_description: editingInterview.job_description || '',
+      });
+    }
+  }, [editingInterview]);
+
+  useEffect(() => {
+    if (!form.resume_id && resumes.length > 0) {
+      const activeResume = resumes.find(r => r.is_active) || resumes[0];
+      setForm(prev => ({ ...prev, resume_id: activeResume.id }));
+    }
+  }, [resumes, form.resume_id]);
+
   const selectedResume = useMemo(
-    () => getResumeById(form.selectedResumeId) ?? resumeOptions[0],
-    [form.selectedResumeId]
+    () => resumes.find((r) => r.id === form.resume_id) || resumes[0],
+    [resumes, form.resume_id]
   );
 
   const handleAddTech = useCallback(() => {
     const value = techInput.trim();
-    if (!value || form.techStack.some(t => t.toLowerCase() === value.toLowerCase())) return;
-    setForm((prev) => ({ ...prev, techStack: [...prev.techStack, value] }));
+    if (!value || form.tech_stack.some(t => t.toLowerCase() === value.toLowerCase())) return;
+    setForm((prev) => ({ ...prev, tech_stack: [...prev.tech_stack, value] }));
     setTechInput('');
-  }, [techInput, form.techStack]);
+  }, [techInput, form.tech_stack]);
 
   const handleRemoveTech = useCallback((item) => {
     setForm((prev) => ({
       ...prev,
-      techStack: prev.techStack.filter((tech) => tech !== item),
+      tech_stack: prev.tech_stack.filter((tech) => tech !== item),
     }));
   }, []);
 
@@ -59,8 +82,22 @@ export const useInterviews = () => {
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  const handleSubmit = () => {
-    router.push(`/dashboard/interviews`);
+  const handleSubmit = async () => {
+    try {
+      const payload = {
+        ...form,
+        total_questions: parseInt(form.total_questions),
+      };
+
+      if (isEditing) {
+        await updateInterview({ id, ...payload }).unwrap();
+      } else {
+        await createInterview(payload).unwrap();
+      }
+      router.push(`/dashboard/interviews`);
+    } catch (err) {
+      console.error('Failed to save interview:', err);
+    }
   };
 
   return {
@@ -74,6 +111,8 @@ export const useInterviews = () => {
     setResumePreviewId,
     selectedResume,
     isEditing,
+    isFetching,
+    isSubmitting: isCreating || isUpdating,
     handleAddTech,
     handleRemoveTech,
     handleNext,

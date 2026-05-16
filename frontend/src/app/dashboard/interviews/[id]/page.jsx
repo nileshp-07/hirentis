@@ -3,22 +3,22 @@ import { useState, useCallback, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CalendarDays, Clock3, MapPin, PencilLine, Sparkles, Target, UserRound, Wrench } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock3, MapPin, PencilLine, Sparkles, Target, UserRound, Wrench, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import PreStartModal from "@/components/session/PreStartModal";
 import WarmupScreen from "@/components/session/WarmupScreen";
-import { getInterviewById, getResumeById } from "../interviewsData";
+import { useGetInterviewQuery } from "@/redux/api/interviewApi";
 
 const metadataItems = (interview) => [
-  { icon: CalendarDays, label: "Interview Date", value: interview.date || "TBD" },
-  { icon: MapPin, label: "Location", value: interview.location || "Remote" },
-  { icon: Wrench, label: "Type", value: interview.type || "Technical" },
-  { icon: Clock3, label: "Duration", value: interview.duration || "45 mins" },
-  { icon: Target, label: "Difficulty", value: interview.difficulty || "Medium" },
-  { icon: UserRound, label: "Experience", value: interview.experience || "2+ Years" },
+  { icon: CalendarDays, label: "Created At", value: new Date(interview.created_at).toLocaleDateString() },
+  { icon: MapPin, label: "Location", value: "Remote" },
+  { icon: Wrench, label: "Type", value: interview.interview_type },
+  { icon: Clock3, label: "Duration", value: interview.interview_overview?.estimated_duration || "45 mins" },
+  { icon: Target, label: "Difficulty", value: interview.experience_level ? (isNaN(interview.experience_level) ? interview.experience_level : `${interview.experience_level} Years`) : "Standard" },
+  { icon: UserRound, label: "Experience", value: interview.experience_level ? (isNaN(interview.experience_level) ? interview.experience_level : `${interview.experience_level} Years`) : "Not Specified" },
 ];
 
 export default function InterviewDetailPage({ params }) {
@@ -26,24 +26,7 @@ export default function InterviewDetailPage({ params }) {
   const id = unwrappedParams.id;
   const router = useRouter();
 
-  const interviewData = getInterviewById(id);
-
-  const interview = interviewData ? {
-    ...interviewData,
-    role: interviewData.title || "Software Engineer",
-    company: interviewData.company || "Hirentis",
-    difficulty: interviewData.difficulty || "Medium",
-    experience: interviewData.experience || "2+ Years",
-    location: interviewData.location || "Remote",
-    jobDescription: interviewData.jobDescription || "Build polished frontend experiences, collaborate with product and design, and communicate implementation tradeoffs clearly across teams.",
-    requirements: interviewData.requirements || [
-      "Strong technical communication",
-      "Domain-specific fundamentals",
-      "Problem-solving clarity",
-    ],
-    cultureFit: interviewData.cultureFit || ["Collaborative", "Analytical", "Detail Oriented"],
-    selectedResumeId: interviewData.selectedResumeId || "res-001"
-  } : null;
+  const { data: interview, isLoading, error } = useGetInterviewQuery(id);
 
   const [launchPhase, setLaunchPhase] = useState("idle");
 
@@ -56,7 +39,15 @@ export default function InterviewDetailPage({ params }) {
   }, [router, id, sessionId]);
   const handleClose = useCallback(() => setLaunchPhase("idle"), []);
 
-  if (!interview) {
+  if (isLoading) {
+    return (
+      <div className="flex h-[600px] items-center justify-center">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!interview || error) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-10 text-center">
@@ -70,7 +61,7 @@ export default function InterviewDetailPage({ params }) {
     );
   }
 
-  const resume = getResumeById(interview.selectedResumeId);
+  const overview = interview.interview_overview || {};
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -81,7 +72,7 @@ export default function InterviewDetailPage({ params }) {
               <h1 className="text-3xl font-bold">{interview.role}</h1>
               <Badge className="border-primary/20 bg-primary/10 text-primary">Open</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{interview.company}</p>
+            <p className="text-sm text-muted-foreground">{interview.title}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button asChild variant="outline" className="border-border bg-background/60 hover:bg-secondary/70">
@@ -118,40 +109,51 @@ export default function InterviewDetailPage({ params }) {
             <div className="mb-6 flex flex-col space-y-1.5">
               <h3 className="flex items-center gap-2 text-xl font-semibold leading-none tracking-tight">
                 <Sparkles className="h-5 w-5 text-primary" />
-                Interview Overview
+                {overview.overview_title || "Interview Overview"}
               </h3>
             </div>
             <div className="space-y-6">
               <div className="rounded-2xl border border-primary/20 bg-primary/10 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold">{interview.type} Interview</p>
+                    <p className="text-lg font-semibold">{interview.interview_type} Interview</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {interview.totalQuestions} Questions · {interview.techStack?.join(" + ")}
+                      {interview.total_questions} Questions · {interview.tech_stack?.join(" + ")}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Estimated Duration</p>
-                    <p className="mt-1 text-lg font-semibold">{interview.duration || "N/A"}</p>
+                    <p className="mt-1 text-lg font-semibold">{overview.estimated_duration || "45 mins"}</p>
                   </div>
                 </div>
               </div>
 
-              <Accordion type="single" collapsible defaultValue="job-description" className="rounded-2xl border border-border bg-secondary/20 px-4">
+              <Accordion type="single" collapsible defaultValue="summary" className="rounded-2xl border border-border bg-secondary/20 px-4">
+                <AccordionItem value="summary" className="border-none">
+                  <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">AI Strategy Summary</AccordionTrigger>
+                  <AccordionContent className="pb-4 text-sm text-muted-foreground">
+                    {overview.summary || "Generating your personalized interview strategy..."}
+                  </AccordionContent>
+                </AccordionItem>
                 <AccordionItem value="job-description" className="border-none">
                   <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">Job Description</AccordionTrigger>
-                  <AccordionContent className="pb-4 text-sm text-muted-foreground">{interview.jobDescription}</AccordionContent>
+                  <AccordionContent className="pb-4 text-sm text-muted-foreground">
+                    {interview.job_description || "No job description provided."}
+                  </AccordionContent>
                 </AccordionItem>
               </Accordion>
 
               <div>
-                <h3 className="mb-3 font-semibold">Requirements</h3>
+                <h3 className="mb-3 font-semibold">Focus Areas</h3>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {interview.requirements?.map((item) => (
+                  {overview.focus_areas?.map((item) => (
                     <div key={item} className="rounded-xl border border-border bg-secondary/30 p-4 text-sm">
                       {item}
                     </div>
                   ))}
+                  {(!overview.focus_areas || overview.focus_areas.length === 0) && (
+                      <p className="text-sm text-muted-foreground italic">No focus areas identified yet.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -163,7 +165,7 @@ export default function InterviewDetailPage({ params }) {
                 <h3 className="text-xl font-semibold leading-none tracking-tight">Technical Stack</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                {interview.techStack?.map((item) => (
+                {interview.tech_stack?.map((item) => (
                   <Badge key={item} className="border border-border bg-primary/10 text-primary">
                     {item}
                   </Badge>
@@ -173,37 +175,20 @@ export default function InterviewDetailPage({ params }) {
 
             <Card>
               <div className="mb-6 flex flex-col space-y-1.5">
-                <h3 className="text-xl font-semibold leading-none tracking-tight">Culture Fit</h3>
+                <h3 className="text-xl font-semibold leading-none tracking-tight">Preparation Tips</h3>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {interview.cultureFit?.map((item) => (
-                  <Badge key={item} variant="secondary" className="border border-border bg-secondary/60">
-                    {item}
-                  </Badge>
+              <ul className="space-y-3">
+                {overview.preparation_tips?.map((tip, index) => (
+                  <li key={index} className="flex gap-2 text-sm text-muted-foreground">
+                    <span className="text-primary font-bold">•</span>
+                    {tip}
+                  </li>
                 ))}
-              </div>
+                {(!overview.preparation_tips || overview.preparation_tips.length === 0) && (
+                    <p className="text-sm text-muted-foreground italic">Stay sharp and focused on core fundamentals.</p>
+                )}
+              </ul>
             </Card>
-
-            {resume && (
-              <Card>
-                <div className="mb-6 flex flex-col space-y-1.5">
-                  <h3 className="text-xl font-semibold leading-none tracking-tight">Resume Context</h3>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="font-medium">{resume.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{resume.experience}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {resume.skills?.map((skill) => (
-                      <Badge key={skill} variant="secondary" className="border border-border bg-secondary/60">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            )}
           </div>
         </section>
       </motion.div>

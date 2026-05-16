@@ -24,6 +24,12 @@ async def generate_overview(
     total_questions: int,
 ):
     try:
+        exp_display = experience_level
+        if experience_level and experience_level.isdigit():
+            exp_display = f"{experience_level} Years"
+        elif not experience_level:
+            exp_display = "Not specified"
+            
         messages = [
             {
                 "role": "system",
@@ -33,7 +39,7 @@ async def generate_overview(
                 "role": "user",
                 "content": INTERVIEW_OVERVIEW_PROMPT.format(
                     role=role,
-                    experience_level=experience_level or "Not specified",
+                    experience_level=exp_display,
                     interview_type=interview_type.value,
                     tech_stack=json.dumps(tech_stack) if tech_stack else "None",
                     job_description=job_description or "None",
@@ -133,7 +139,10 @@ async def update_interview(
         "resume_id",
     }
 
-    need_regeneration = any(field in update_data for field in ai_triggered_fields)
+    need_regeneration = any(
+        field in update_data and update_data[field] != getattr(db_interview, field)
+        for field in ai_triggered_fields
+    )
 
     if "resume_id" in update_data:
         new_resume = (

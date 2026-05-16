@@ -4,17 +4,15 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  FileText,
-  Check,
+  LoaderCircle,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/Modal';
-import { cn } from '@/lib/utils';
 import PageHeader from '@/components/layout/PageHeader';
+import { cn } from '@/lib/utils';
 
 import { useInterviews } from '@/hooks/useInterviews';
+import { useGetResumesQuery } from '@/redux/api/resumeApi';
 import { BasicInfo } from './builder/BasicInfo';
 import { ResumeSelection } from './builder/ResumeSelection';
 import { JobDescription } from './builder/JobDescription';
@@ -31,6 +29,8 @@ export default function InterviewBuilder() {
     setResumePreviewId,
     selectedResume,
     isEditing,
+    isFetching,
+    isSubmitting,
     handleAddTech,
     handleRemoveTech,
     handleNext,
@@ -38,7 +38,15 @@ export default function InterviewBuilder() {
     handleSubmit,
   } = useInterviews();
 
-  const previewResume = resumePreviewId ? selectedResume : null;
+  const { data: resumes = [] } = useGetResumesQuery();
+
+  if (isFetching) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -58,9 +66,9 @@ export default function InterviewBuilder() {
           <ResumeSelection
             form={form}
             setForm={setForm}
+            resumes={resumes}
             selectedResume={selectedResume}
             resumePreviewId={resumePreviewId}
-            previewResume={previewResume}
             setResumePreviewId={setResumePreviewId}
           />
         );
@@ -138,7 +146,7 @@ export default function InterviewBuilder() {
           type="button"
           variant="ghost"
           onClick={handleBack}
-          disabled={currentStep === 1}
+          disabled={currentStep === 1 || isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -151,9 +159,18 @@ export default function InterviewBuilder() {
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmit}>
-              Finish Configuration
-              <CheckCircle2 className="h-4 w-4 ml-2" />
+            <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                 <>
+                   <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                   Generating Strategy...
+                 </>
+              ) : (
+                <>
+                  Finish Configuration
+                  <CheckCircle2 className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
           )}
         </div>

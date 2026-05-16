@@ -6,12 +6,12 @@ export const JobDescription = ({ form, setForm }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="space-y-2">
-        <Label htmlFor="job-description">Job description</Label>
+        <Label htmlFor="job_description">Job description</Label>
         <Textarea
-          id="job-description"
-          value={form.jobDescription}
+          id="job_description"
+          value={form.job_description}
           onChange={(e) =>
-            setForm((prev) => ({ ...prev, jobDescription: e.target.value }))
+            setForm((prev) => ({ ...prev, job_description: e.target.value }))
           }
           placeholder="Paste the job description or role requirements here..."
           className="min-h-[300px] bg-secondary/20"
