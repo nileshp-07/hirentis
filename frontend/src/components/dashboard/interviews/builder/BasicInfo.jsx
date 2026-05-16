@@ -46,11 +46,11 @@ export const BasicInfo = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="experience">Experience level</Label>
+        <Label htmlFor="experience_level">Experience level</Label>
         <Select
-          value={form.experience}
+          value={form.experience_level}
           onValueChange={(value) =>
-            setForm((prev) => ({ ...prev, experience: value }))
+            setForm((prev) => ({ ...prev, experience_level: value }))
           }
         >
           <SelectTrigger className="bg-secondary/20 border-input">
@@ -66,34 +66,35 @@ export const BasicInfo = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">Interview type</Label>
+        <Label htmlFor="interview_type">Interview type</Label>
         <Select
-          value={form.type}
+          value={form.interview_type}
           onValueChange={(value) =>
-            setForm((prev) => ({ ...prev, type: value }))
+            setForm((prev) => ({ ...prev, interview_type: value }))
           }
         >
           <SelectTrigger className="bg-secondary/20 border-input">
             <SelectValue placeholder="Select type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Technical">Technical</SelectItem>
-            <SelectItem value="Behavioral">Behavioral</SelectItem>
-            <SelectItem value="System Design">System Design</SelectItem>
+            <SelectItem value="TECHNICAL">Technical</SelectItem>
+            <SelectItem value="BEHAVIORAL">Behavioral</SelectItem>
+            <SelectItem value="SYSTEM_DESIGN">System Design</SelectItem>
+            <SelectItem value="HR">HR Round</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="questions">Total questions</Label>
+        <Label htmlFor="total_questions">Total questions</Label>
         <Input
-          id="questions"
+          id="total_questions"
           type="number"
           min={1}
           max={25}
-          value={form.totalQuestions}
+          value={form.total_questions}
           onChange={(e) =>
-            setForm((prev) => ({ ...prev, totalQuestions: e.target.value }))
+            setForm((prev) => ({ ...prev, total_questions: e.target.value }))
           }
         />
       </div>
@@ -125,7 +126,7 @@ export const BasicInfo = ({
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {form.techStack.map((item) => (
+            {form.tech_stack.map((item) => (
               <Badge
                 key={item}
                 className="gap-1 border border-border bg-background/80 text-foreground py-1 px-2"

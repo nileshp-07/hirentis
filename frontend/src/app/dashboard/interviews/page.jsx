@@ -4,17 +4,42 @@ import { motion } from 'framer-motion';
 import { Plus, Sparkles, CircleDashed, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/layout/PageHeader';
-import { interviewRecords } from './interviewsData';
 import { ActiveInterviewCard } from '@/components/dashboard/interviews/ActiveInterviewCard';
 import { CompletedInterviewCard } from '@/components/dashboard/interviews/CompletedInterviewCard';
+import { useGetInterviewsQuery } from '@/redux/api/interviewApi';
 
 export default function InterviewsPage() {
-  const activeInterviews = interviewRecords.filter(
+  const { data: interviews = [], isLoading } = useGetInterviewsQuery();
+
+  const transformInterview = (interview) => ({
+    ...interview,
+    status: interview.status || (interview.interview_overview ? 'scheduled' : 'pending'),
+    date: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : 'TBD',
+    duration: interview.interview_overview?.estimated_duration || '45 mins',
+    techStack: interview.tech_stack || [],
+    totalQuestions: interview.total_questions,
+    type: interview.interview_type,
+  });
+
+  const transformedInterviews = interviews.map(transformInterview);
+
+  const activeInterviews = transformedInterviews.filter(
     (interview) => interview.status !== 'completed'
   );
-  const completedInterviews = interviewRecords.filter(
+  const completedInterviews = transformedInterviews.filter(
     (interview) => interview.status === 'completed'
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading your interviews...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
