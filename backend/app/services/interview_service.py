@@ -55,7 +55,11 @@ async def create_interview(
 ):
     resume = None
     if interview_in.resume_id:
-        resume = db.query(Resume).filter(Resume.id == interview_in.resume_id).first()
+        resume = (
+            db.query(Resume)
+            .filter(Resume.id == interview_in.resume_id, Resume.user_id == user_id)
+            .first()
+        )
 
     if not resume:
         resume = (
@@ -126,27 +130,51 @@ async def update_interview(
         "experience_level",
         "tech_stack",
         "interview_type",
-        "total_questions",
+        "resume_id",
     }
 
     need_regeneration = any(field in update_data for field in ai_triggered_fields)
 
+    if "resume_id" in update_data:
+        new_resume = (
+            db.query(Resume)
+            .filter(Resume.id == update_data["resume_id"], Resume.user_id == user_id)
+            .first()
+        )
+        if not new_resume:
+            raise HTTPException(
+                status_code=400, detail="Invalid or unauthorized resume ID"
+            )
+
+    new_overview = None
+    if need_regeneration:
+        current_resume_id = update_data.get("resume_id", db_interview.resume_id)
+        resume = db.query(Resume).filter(Resume.id == current_resume_id).first()
+
+        if resume and resume.parsed_data:
+            new_overview = await generate_overview(
+                resume_data=resume.parsed_data,
+                job_description=update_data.get(
+                    "job_description", db_interview.job_description
+                ),
+                role=update_data.get("role", db_interview.role),
+                experience_level=update_data.get(
+                    "experience_level", db_interview.experience_level
+                ),
+                tech_stack=update_data.get("tech_stack", db_interview.tech_stack),
+                interview_type=update_data.get(
+                    "interview_type", db_interview.interview_type
+                ),
+                total_questions=update_data.get(
+                    "total_questions", db_interview.total_questions
+                ),
+            )
+
     for field, value in update_data.items():
         setattr(db_interview, field, value)
 
-    if need_regeneration and db_interview.resume_id:
-        resume = db.query(Resume).filter(Resume.id == db_interview.resume_id).first()
-        if resume and resume.parsed_data:
-            overview = await generate_overview(
-                resume_data=resume.parsed_data,
-                job_description=db_interview.job_description,
-                role=db_interview.role,
-                experience_level=db_interview.experience_level,
-                tech_stack=db_interview.tech_stack,
-                interview_type=db_interview.interview_type,
-                total_questions=db_interview.total_questions,
-            )
-            db_interview.interview_overview = overview
+    if new_overview:
+        db_interview.interview_overview = new_overview
 
     db.commit()
     db.refresh(db_interview)
