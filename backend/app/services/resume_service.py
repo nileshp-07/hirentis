@@ -4,47 +4,48 @@ from fastapi import HTTPException
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.resume import Resume
-from app.utils.file_parser import save_and_extract_text_from_file
-from app.ai.llm.openai_client import get_chat_completion
-from app.ai.llm.prompt_templates import RESUME_PARSING_PROMPT
+from app.utils.file_parser import delete_file, save_and_extract_text_from_file
+from app.ai.llm.openai_client import LLMError, generate_structured
+from app.ai.llm.output_schemas import ParsedResume
+from app.ai.llm.prompt_templates import (
+    RESUME_PARSING_SYSTEM_PROMPT,
+    RESUME_PARSING_USER_PROMPT,
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def parse_resume_content(text: str) -> dict:
+def parse_resume_content(text: str) -> ParsedResume:
+    messages = [
+        {"role": "system", "content": RESUME_PARSING_SYSTEM_PROMPT},
+        {"role": "user", "content": RESUME_PARSING_USER_PROMPT.format(text=text)},
+    ]
+    return generate_structured(messages, ParsedResume)
+
+
+def process_resume_upload(db: Session, user_id: uuid.UUID, file):
+    file_path, text = save_and_extract_text_from_file(file)
+
     try:
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a specialized resume parsing agent.",
-            },
-            {"role": "user", "content": RESUME_PARSING_PROMPT.format(text=text)},
-        ]
-        return await get_chat_completion(messages, response_format="json")
-    except Exception as e:
-        logger.error(f"Resume parsing failed: {str(e)}")
-        return {
-            "skills": [],
-            "experience_years": 0,
-            "projects": [],
-            "summary": "Error during AI parsing.",
-        }
-
-
-async def process_resume_upload(db: Session, user_id: uuid.UUID, file):
-    file_path, text = await save_and_extract_text_from_file(file)
-
-    parsed_json = await parse_resume_content(text)
-
-    if not parsed_json.get("is_resume", True):
+        parsed = parse_resume_content(text)
+    except LLMError:
+        delete_file(file_path)
         raise HTTPException(
-            status_code=400,
-            detail="The uploaded file does not appear to be a professional resume. Please upload a valid resume."
+            status_code=502,
+            detail="We couldn't analyze your resume right now. Please try again.",
         )
 
-    db.query(Resume).filter(Resume.user_id == user_id, Resume.is_active == True).update(
-        {"is_active": False}
-    )
+    if not parsed.is_resume:
+        delete_file(file_path)
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded file does not appear to be a professional resume. Please upload a valid resume.",
+        )
+    parsed_json = parsed.model_dump(exclude={"is_resume"})
+
+    db.query(Resume).filter(
+        Resume.user_id == user_id, Resume.is_active.is_(True)
+    ).update({"is_active": False})
 
     new_resume = Resume(
         user_id=user_id,
@@ -63,7 +64,13 @@ async def process_resume_upload(db: Session, user_id: uuid.UUID, file):
 
 
 def get_user_resumes(user_id: uuid.UUID, db: Session):
-    return db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.created_at.desc()).all()
+    return (
+        db.query(Resume)
+        .filter(Resume.user_id == user_id)
+        .order_by(Resume.created_at.desc())
+        .all()
+    )
+
 
 def get_user_resume(
     db: Session, resume_id: uuid.UUID, user_id: uuid.UUID
@@ -83,17 +90,18 @@ def delete_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
 
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-    
+
     db.delete(resume)
     db.commit()
     return True
+
 
 def set_active_resume(db: Session, resume_id: uuid.UUID, user_id: uuid.UUID):
     resume = get_user_resume(db, resume_id, user_id)
 
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-    
+
     # deactivate all active resumes for user (single query)
     db.query(Resume).filter(
         Resume.user_id == user_id,

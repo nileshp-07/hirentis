@@ -1,6 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useGetInterviewQuery, useCreateInterviewMutation, useUpdateInterviewMutation } from '@/redux/api/interviewApi';
+import { toast } from 'sonner';
+import {
+  useGetInterviewQuery,
+  useCreateInterviewMutation,
+  useUpdateInterviewMutation,
+} from '@/redux/api/interviewApi';
 import { useGetResumesQuery } from '@/redux/api/resumeApi';
 
 const STEPS = ['Basic Info', 'Resume Selection', 'Job Description'];
@@ -12,13 +17,16 @@ export const useInterviews = () => {
   const params = useParams();
   const id = params?.id;
 
-  const { data: editingInterview, isLoading: isFetching } = useGetInterviewQuery(id, {
-    skip: !id,
-  });
+  const { data: editingInterview, isLoading: isFetching } =
+    useGetInterviewQuery(id, {
+      skip: !id,
+    });
   const { data: resumes = [] } = useGetResumesQuery();
 
-  const [createInterview, { isLoading: isCreating }] = useCreateInterviewMutation();
-  const [updateInterview, { isLoading: isUpdating }] = useUpdateInterviewMutation();
+  const [createInterview, { isLoading: isCreating }] =
+    useCreateInterviewMutation();
+  const [updateInterview, { isLoading: isUpdating }] =
+    useUpdateInterviewMutation();
 
   const isEditing = Boolean(id);
 
@@ -37,36 +45,40 @@ export const useInterviews = () => {
     job_description: DEFAULT_JD,
   });
 
-  useEffect(() => {
-    if (editingInterview) {
-      setForm({
-        title: editingInterview.title || '',
-        role: editingInterview.role || '',
-        experience_level: editingInterview.experience_level || '2 years',
-        interview_type: editingInterview.interview_type || 'TECHNICAL',
-        total_questions: String(editingInterview.total_questions || 10),
-        tech_stack: editingInterview.tech_stack || [],
-        resume_id: editingInterview.resume_id || '',
-        job_description: editingInterview.job_description || '',
-      });
-    }
-  }, [editingInterview]);
+  const [loadedInterviewId, setLoadedInterviewId] = useState(null);
+  if (editingInterview && editingInterview.id !== loadedInterviewId) {
+    setLoadedInterviewId(editingInterview.id);
+    setForm({
+      title: editingInterview.title || '',
+      role: editingInterview.role || '',
+      experience_level: editingInterview.experience_level || '2 years',
+      interview_type: editingInterview.interview_type || 'TECHNICAL',
+      total_questions: String(editingInterview.total_questions || 10),
+      tech_stack: editingInterview.tech_stack || [],
+      resume_id: editingInterview.resume_id || '',
+      job_description: editingInterview.job_description || '',
+    });
+  }
 
-  useEffect(() => {
-    if (!form.resume_id && resumes.length > 0) {
-      const activeResume = resumes.find(r => r.is_active) || resumes[0];
-      setForm(prev => ({ ...prev, resume_id: activeResume.id }));
-    }
-  }, [resumes, form.resume_id]);
+  const defaultResumeId =
+    (resumes.find((r) => r.is_active) || resumes[0])?.id || '';
+  const resolvedForm = useMemo(
+    () => (form.resume_id ? form : { ...form, resume_id: defaultResumeId }),
+    [form, defaultResumeId]
+  );
 
   const selectedResume = useMemo(
-    () => resumes.find((r) => r.id === form.resume_id) || resumes[0],
-    [resumes, form.resume_id]
+    () => resumes.find((r) => r.id === resolvedForm.resume_id) || resumes[0],
+    [resumes, resolvedForm.resume_id]
   );
 
   const handleAddTech = useCallback(() => {
     const value = techInput.trim();
-    if (!value || form.tech_stack.some(t => t.toLowerCase() === value.toLowerCase())) return;
+    if (
+      !value ||
+      form.tech_stack.some((t) => t.toLowerCase() === value.toLowerCase())
+    )
+      return;
     setForm((prev) => ({ ...prev, tech_stack: [...prev.tech_stack, value] }));
     setTechInput('');
   }, [techInput, form.tech_stack]);
@@ -85,8 +97,9 @@ export const useInterviews = () => {
   const handleSubmit = async () => {
     try {
       const payload = {
-        ...form,
-        total_questions: parseInt(form.total_questions, 10) || 5,
+        ...resolvedForm,
+        resume_id: resolvedForm.resume_id || null,
+        total_questions: parseInt(resolvedForm.total_questions, 10) || 5,
       };
 
       if (isEditing) {
@@ -97,13 +110,17 @@ export const useInterviews = () => {
       router.push(`/dashboard/interviews`);
     } catch (err) {
       console.error('Failed to save interview:', err);
+      toast.error('Failed to save interview', {
+        description:
+          err?.data?.detail || 'Something went wrong. Please try again.',
+      });
     }
   };
 
   return {
     currentStep,
     steps: STEPS,
-    form,
+    form: resolvedForm,
     setForm,
     techInput,
     setTechInput,

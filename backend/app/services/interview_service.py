@@ -8,13 +8,17 @@ from sqlalchemy.orm import Session
 from app.models.interview import Interview, InterviewType
 from app.models.resume import Resume
 from app.schemas.interview import InterviewCreate, InterviewUpdate
-from app.ai.llm.prompt_templates import INTERVIEW_OVERVIEW_PROMPT
-from app.ai.llm.openai_client import get_chat_completion
+from app.ai.llm.openai_client import LLMError, generate_structured
+from app.ai.llm.output_schemas import InterviewOverview
+from app.ai.llm.prompt_templates import (
+    INTERVIEW_OVERVIEW_SYSTEM_PROMPT,
+    INTERVIEW_OVERVIEW_USER_PROMPT,
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def generate_overview(
+def generate_overview(
     resume_data: dict,
     job_description: Optional[str],
     role: str,
@@ -22,39 +26,40 @@ async def generate_overview(
     tech_stack: Optional[List[str]],
     interview_type: InterviewType,
     total_questions: int,
-):
+) -> dict:
+    exp_display = experience_level
+    if experience_level and experience_level.isdigit():
+        exp_display = f"{experience_level} Years"
+    elif not experience_level:
+        exp_display = "Not specified"
+
+    messages = [
+        {"role": "system", "content": INTERVIEW_OVERVIEW_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": INTERVIEW_OVERVIEW_USER_PROMPT.format(
+                role=role,
+                experience_level=exp_display,
+                interview_type=InterviewType(interview_type).value,
+                total_questions=total_questions,
+                tech_stack=json.dumps(tech_stack) if tech_stack else "None",
+                job_description=job_description or "None",
+                resume_data=json.dumps(resume_data),
+            ),
+        },
+    ]
+
     try:
-        exp_display = experience_level
-        if experience_level and experience_level.isdigit():
-            exp_display = f"{experience_level} Years"
-        elif not experience_level:
-            exp_display = "Not specified"
-            
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a specialized interview preparation assistant.",
-            },
-            {
-                "role": "user",
-                "content": INTERVIEW_OVERVIEW_PROMPT.format(
-                    role=role,
-                    experience_level=exp_display,
-                    interview_type=interview_type.value,
-                    tech_stack=json.dumps(tech_stack) if tech_stack else "None",
-                    job_description=job_description or "None",
-                    resume_data=json.dumps(resume_data),
-                ),
-            },
-        ]
-
-        return await get_chat_completion(messages=messages, response_format="json")
-    except Exception as e:
-        logger.error(f"AI Overview generation failed: {e}")
-        return None
+        overview = generate_structured(messages, InterviewOverview)
+    except LLMError:
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't generate the interview overview right now. Please try again.",
+        )
+    return overview.model_dump()
 
 
-async def create_interview(
+def create_interview(
     db: Session,
     user_id: uuid.UUID,
     interview_in: InterviewCreate,
@@ -77,7 +82,7 @@ async def create_interview(
             status_code=400, detail="Please upload an active resume first"
         )
 
-    overview = await generate_overview(
+    overview = generate_overview(
         resume_data=resume.parsed_data,
         job_description=interview_in.job_description,
         role=interview_in.role,
@@ -121,7 +126,7 @@ def get_interview(db: Session, user_id: uuid.UUID, interview_id: uuid.UUID):
     return interview
 
 
-async def update_interview(
+def update_interview(
     db: Session,
     user_id: uuid.UUID,
     interview_id: uuid.UUID,
@@ -161,7 +166,7 @@ async def update_interview(
         resume = db.query(Resume).filter(Resume.id == current_resume_id).first()
 
         if resume and resume.parsed_data:
-            new_overview = await generate_overview(
+            new_overview = generate_overview(
                 resume_data=resume.parsed_data,
                 job_description=update_data.get(
                     "job_description", db_interview.job_description

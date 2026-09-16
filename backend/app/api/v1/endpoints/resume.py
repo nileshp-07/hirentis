@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.post("/upload", response_model=ResumeResponse)
-async def upload_resume(
+def upload_resume(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -26,23 +26,23 @@ async def upload_resume(
             status_code=400, detail="File too large. Maximum size is 5MB."
         )
 
-    resume = await resume_service.process_resume_upload(db, current_user.id, file)
+    resume = resume_service.process_resume_upload(db, current_user.id, file)
 
     return resume
 
 
 @router.get("/", response_model=list[ResumeResponse])
 def get_resumes(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     return resume_service.get_user_resumes(current_user.id, db)
+
 
 @router.delete("/{resume_id}")
 def delete_resume(
     resume_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     resume_service.delete_resume(db, resume_id, current_user.id)
     return {"message": "Resume deleted successfully"}
@@ -52,7 +52,7 @@ def delete_resume(
 def activate_resume(
     resume_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     resume_service.set_active_resume(db, resume_id, current_user.id)
     return {"message": "Resume activated successfully"}
