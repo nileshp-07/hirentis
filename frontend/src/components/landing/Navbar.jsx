@@ -39,12 +39,16 @@ const Navbar = () => {
 
         <div className="hidden items-center gap-3 md:flex">
           <Show when="signed-out">
-            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+            <SignInButton mode="modal" 
+              forceRedirectUrl="/dashboard"
+              signUpForceRedirectUrl="/dashboard">
               <Button variant="ghost" size="sm">
                 Login
               </Button>
             </SignInButton>
-            <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
+            <SignUpButton mode="modal" 
+              forceRedirectUrl="/dashboard"
+              signInForceRedirectUrl="/dashboard">
               <Button
                 size="sm"
                 className="gradient-bg border-0 text-primary-foreground hover:opacity-90"
@@ -97,14 +101,18 @@ const Navbar = () => {
               <div className="flex gap-3 pt-2">
                 <Show when="signed-out">
                   <div className="flex-1">
-                    <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                    <SignInButton mode="modal" 
+                      forceRedirectUrl="/dashboard"
+                      signUpForceRedirectUrl="/dashboard">
                       <Button variant="outline" className="w-full" size="sm">
                         Login
                       </Button>
                     </SignInButton>
                   </div>
                   <div className="flex-1">
-                    <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
+                    <SignUpButton mode="modal" 
+                      forceRedirectUrl="/dashboard"
+                      signInForceRedirectUrl="/dashboard">
                       <Button
                         size="sm"
                         className="w-full gradient-bg border-0 text-primary-foreground"
