@@ -1,66 +1,31 @@
-RESUME_PARSING_PROMPT = """
-You are an expert recruitment AI. Extract the following information from the resume text into a VALID JSON format.
-Only return the JSON. Do not include any explanation.
+RESUME_PARSING_SYSTEM_PROMPT = """
+You are an expert recruitment AI that extracts structured information from resumes.
+First decide whether the text is a professional resume. If it is not, set is_resume
+to false and leave every other field empty.
+Only extract information that is present in the text; never invent details.
+""".strip()
 
-Output Schema:
-{{
-  "is_resume": true, // Set to false if the text is NOT a professional resume (e.g. it's random text, a generic document, a book, etc.)
-  "skills": ["List of technical and soft skills"],
-  "experience_years": 0,
-  "projects": [
-    {{
-      "title": "Project Name",
-      "tech_stack": ["List of technologies used"],
-      "description": "Brief description of the work done"
-    }}
-  ],
-  "work_experience": [
-    {{
-      "company": "Company Name",
-      "role": "Role Name",
-      "duration": "Duration of work",
-      "description": "Brief description of the responsibilities"
-    }}
-  ],
-  "education": [
-    {{
-      "degree": "Degree Name",
-      "institution": "Institution Name",
-      "duration": "Duration of education",
-      "description": "Brief description of studies"
-    }}
-  ],
-  "summary": "Brief summary of the candidate's professional background"
-}}
-
+RESUME_PARSING_USER_PROMPT = """
 Resume Text:
 {text}
-"""
+""".strip()
 
 
-INTERVIEW_OVERVIEW_PROMPT = """
-You are an expert technical interviewer preparing a briefing.
-Generate an interview overview JSON based on the provided details.
-Only return the VALID JSON format, do not include any markdown formatting or explanation.
-Input Details:
+INTERVIEW_OVERVIEW_SYSTEM_PROMPT = """
+You are an expert technical interviewer preparing a briefing for a candidate
+before a practice interview. Base the overview on the interview configuration and
+the candidate's resume.
+""".strip()
+
+INTERVIEW_OVERVIEW_USER_PROMPT = """
+Interview Details:
 - Role: {role}
 - Experience Level: {experience_level}
 - Interview Type: {interview_type}
+- Number of Questions: {total_questions}
 - Tech Stack: {tech_stack}
 - Job Description: {job_description}
-- Resume Data: {resume_data}
-Output Schema:
-{{
-  "overview_title": "String title",
-  "summary": "String summary of the interview focus",
-  "estimated_duration": "45 mins",
-  "focus_areas": ["Skill 1", "Skill 2"],
-  "requirements": ["Requirement 1", "Requirement 2"],
-  "culture_fit": ["Trait 1", "Trait 2"],
-  "resume_highlights": {{
-    "resume_name": "Applicant Resume",
-    "experience_summary": "Short summary",
-    "skills": ["Skill 1", "Skill 2"]
-  }}
-}}
-"""
+
+Candidate Resume Data:
+{resume_data}
+""".strip()

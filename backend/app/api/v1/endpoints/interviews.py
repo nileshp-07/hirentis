@@ -12,12 +12,12 @@ router = APIRouter()
 
 
 @router.post("/", response_model=InterviewResponse, status_code=status.HTTP_201_CREATED)
-async def create_interview(
+def create_interview(
     interview: InterviewCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return await interview_service.create_interview(db, current_user.id, interview)
+    return interview_service.create_interview(db, current_user.id, interview)
 
 
 @router.get("/", response_model=List[InterviewResponse])
@@ -37,13 +37,13 @@ def get_interview(
 
 
 @router.patch("/{interview_id}", response_model=InterviewResponse)
-async def update_interview(
+def update_interview(
     interview_id: uuid.UUID,
     interview: InterviewUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return await interview_service.update_interview(
+    return interview_service.update_interview(
         db, current_user.id, interview_id, interview
     )
 
