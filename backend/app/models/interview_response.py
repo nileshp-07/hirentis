@@ -4,6 +4,7 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.interview_question import InterviewQuestion
+    from app.models.response_evaluation import ResponseEvaluation
 
 from sqlalchemy import DateTime, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,4 +31,11 @@ class InterviewResponse(BaseModel):
 
     question: Mapped["InterviewQuestion"] = relationship(
         "InterviewQuestion", back_populates="response"
+    )
+    evaluation: Mapped[Optional["ResponseEvaluation"]] = relationship(
+        "ResponseEvaluation",
+        back_populates="response",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
