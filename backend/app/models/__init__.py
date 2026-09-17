@@ -9,6 +9,7 @@ from app.models.interview_question import (
     QuestionDifficulty,
     QuestionType,
 )
+from app.models.interview_response import InterviewResponse
 
 __all__ = [
     "Base",
@@ -23,4 +24,5 @@ __all__ = [
     "InterviewQuestion",
     "QuestionDifficulty",
     "QuestionType",
+    "InterviewResponse",
 ]
