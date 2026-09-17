@@ -4,6 +4,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.interview_session import InterviewSession
+    from app.models.interview_response import InterviewResponse
 
 from sqlalchemy import (
     Integer,
@@ -70,4 +71,11 @@ class InterviewQuestion(BaseModel):
     )
     followups: Mapped[List["InterviewQuestion"]] = relationship(
         "InterviewQuestion", back_populates="parent", passive_deletes=True
+    )
+    response: Mapped[Optional["InterviewResponse"]] = relationship(
+        "InterviewResponse",
+        back_populates="question",
+        uselist=False,  # Returns single object, not a list
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
