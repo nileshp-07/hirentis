@@ -5,6 +5,7 @@ from enum import Enum
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.resume import Resume
+    from app.models.interview_session import InterviewSession
 
 from sqlalchemy import String, Integer, Text, ForeignKey, Enum as SqlEnum, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -53,3 +54,9 @@ class Interview(BaseModel):
 
     user: Mapped["User"] = relationship("User", backref="interviews")
     resume: Mapped[Optional["Resume"]] = relationship("Resume")
+    sessions: Mapped[List["InterviewSession"]] = relationship(
+        "InterviewSession",
+        back_populates="interview",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
