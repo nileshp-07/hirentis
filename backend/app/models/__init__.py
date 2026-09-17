@@ -4,6 +4,11 @@ from app.models.profile import Profile
 from app.models.resume import Resume
 from app.models.interview import Interview
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
+from app.models.interview_question import (
+    InterviewQuestion,
+    QuestionDifficulty,
+    QuestionType,
+)
 
 __all__ = [
     "Base",
@@ -15,4 +20,7 @@ __all__ = [
     "Interview",
     "InterviewSession",
     "InterviewSessionStatus",
+    "InterviewQuestion",
+    "QuestionDifficulty",
+    "QuestionType",
 ]
