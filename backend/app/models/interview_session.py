@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.interview import Interview
+    from app.models.interview_question import InterviewQuestion
 
 from sqlalchemy import DateTime, Integer, ForeignKey, Enum as SqlEnum, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -50,3 +51,10 @@ class InterviewSession(BaseModel):
         "Interview", back_populates="sessions"
     )
     user: Mapped["User"] = relationship("User")
+    questions: Mapped[List["InterviewQuestion"]] = relationship(
+        "InterviewQuestion",
+        back_populates="session",
+        order_by="InterviewQuestion.order_index",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
