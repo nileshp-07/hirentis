@@ -8,9 +8,11 @@ if TYPE_CHECKING:
 
 from sqlalchemy import (
     Integer,
+    String,
     Text,
     ForeignKey,
     Enum as SqlEnum,
+    JSON,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -60,6 +62,11 @@ class InterviewQuestion(BaseModel):
         nullable=False,
     )
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # Plan topic the question covers, e.g. "React hooks"; used for per-topic analytics
+    topic: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Hidden scoring guide written with the question, e.g. {"key_points": [...]}
+    rubric: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     session: Mapped["InterviewSession"] = relationship(
         "InterviewSession", back_populates="questions"
