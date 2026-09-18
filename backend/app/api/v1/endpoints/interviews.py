@@ -1,12 +1,13 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewResponse
-from app.services import interview_service
+from app.schemas.session import SessionDetail, SessionSummary
+from app.services import interview_service, session_service
 
 router = APIRouter()
 
@@ -56,3 +57,34 @@ def delete_interview(
 ):
     interview_service.delete_interview(db, current_user.id, interview_id)
     return None
+
+
+@router.post(
+    "/{interview_id}/sessions",
+    response_model=SessionDetail,
+    status_code=status.HTTP_201_CREATED,
+    tags=["sessions"],
+)
+def start_session(
+    interview_id: uuid.UUID,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    session, created = session_service.start_session(db, current_user.id, interview_id)
+    if not created:
+        response.status_code = status.HTTP_200_OK
+    return session
+
+
+@router.get(
+    "/{interview_id}/sessions",
+    response_model=List[SessionSummary],
+    tags=["sessions"],
+)
+def list_sessions(
+    interview_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return session_service.list_sessions(db, current_user.id, interview_id)
