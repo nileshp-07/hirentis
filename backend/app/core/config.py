@@ -15,6 +15,8 @@ class Settings:
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     OPENAI_TIMEOUT_SECONDS: float = float(os.getenv("OPENAI_TIMEOUT_SECONDS", "60"))
     OPENAI_MAX_RETRIES: int = int(os.getenv("OPENAI_MAX_RETRIES", "2"))
+    LLM_MODEL_PLANNER: str = os.getenv("LLM_MODEL_PLANNER", OPENAI_MODEL)
+    LLM_MODEL_INTERVIEWER: str = os.getenv("LLM_MODEL_INTERVIEWER", OPENAI_MODEL)
 
     CLERK_WEBHOOK_SECRET: str = os.getenv("CLERK_WEBHOOK_SECRET", "")
     CLERK_SECRET_KEY: str = os.getenv("CLERK_SECRET_KEY", "")
