@@ -1,10 +1,22 @@
 'use client';
 import { useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import AppSidebar from '@/components/layout/AppSidebar';
 import DashboardNavbar from '@/components/layout/DashboardNavbar';
+import { Loader } from '@/components/ui/Loader';
 
 export default function DashboardLayout({ children }) {
+  const { isLoaded } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader text="Loading your workspace..." />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar
