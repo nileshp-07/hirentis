@@ -1,24 +1,68 @@
-"use client";
-import { useState, useCallback, use } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CalendarDays, Clock3, MapPin, PencilLine, Sparkles, Target, UserRound, Wrench, LoaderCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import PreStartModal from "@/components/session/PreStartModal";
-import WarmupScreen from "@/components/session/WarmupScreen";
-import { useGetInterviewQuery } from "@/redux/api/interviewApi";
+'use client';
+import { useState, useCallback, useRef, use } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight,
+  CalendarDays,
+  Clock3,
+  MapPin,
+  PencilLine,
+  Sparkles,
+  Target,
+  UserRound,
+  Wrench,
+  LoaderCircle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import PreStartModal from '@/components/session/PreStartModal';
+import WarmupScreen from '@/components/session/WarmupScreen';
+import { toast } from 'sonner';
+import { useGetInterviewQuery } from '@/redux/api/interviewApi';
+import { useStartSessionMutation } from '@/redux/api/sessionApi';
 
 const metadataItems = (interview) => [
-  { icon: CalendarDays, label: "Created At", value: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : "TBD" },
-  { icon: MapPin, label: "Location", value: "Remote" },
-  { icon: Wrench, label: "Type", value: interview.interview_type },
-  { icon: Clock3, label: "Duration", value: interview.interview_overview?.estimated_duration || "45 mins" },
-  { icon: Target, label: "Difficulty", value: interview.experience_level ? (isNaN(interview.experience_level) ? interview.experience_level : `${interview.experience_level} Years`) : "Standard" },
-  { icon: UserRound, label: "Experience", value: interview.experience_level ? (isNaN(interview.experience_level) ? interview.experience_level : `${interview.experience_level} Years`) : "Not Specified" },
+  {
+    icon: CalendarDays,
+    label: 'Created At',
+    value: interview.created_at
+      ? new Date(interview.created_at).toLocaleDateString()
+      : 'TBD',
+  },
+  { icon: MapPin, label: 'Location', value: 'Remote' },
+  { icon: Wrench, label: 'Type', value: interview.interview_type },
+  {
+    icon: Clock3,
+    label: 'Duration',
+    value: interview.interview_overview?.estimated_duration || '45 mins',
+  },
+  {
+    icon: Target,
+    label: 'Difficulty',
+    value: interview.experience_level
+      ? isNaN(interview.experience_level)
+        ? interview.experience_level
+        : `${interview.experience_level} Years`
+      : 'Standard',
+  },
+  {
+    icon: UserRound,
+    label: 'Experience',
+    value: interview.experience_level
+      ? isNaN(interview.experience_level)
+        ? interview.experience_level
+        : `${interview.experience_level} Years`
+      : 'Not Specified',
+  },
 ];
 
 export default function InterviewDetailPage({ params }) {
@@ -28,16 +72,36 @@ export default function InterviewDetailPage({ params }) {
 
   const { data: interview, isLoading, error } = useGetInterviewQuery(id);
 
-  const [launchPhase, setLaunchPhase] = useState("idle");
+  const [launchPhase, setLaunchPhase] = useState('idle');
+  const [sessionId, setSessionId] = useState(null);
+  const [startSession] = useStartSessionMutation();
+  const startingRef = useRef(false);
 
-  const sessionId = `session-${Date.now()}`;
+  const handleStartClick = useCallback(() => setLaunchPhase('pre-start'), []);
 
-  const handleStartClick = useCallback(() => setLaunchPhase("pre-start"), []);
-  const handlePreStartComplete = useCallback(() => setLaunchPhase("warmup"), []);
+  const handlePreStartComplete = useCallback(async () => {
+    if (startingRef.current) return;
+    startingRef.current = true;
+    setSessionId(null);
+    setLaunchPhase('warmup');
+    try {
+      const session = await startSession(id).unwrap();
+      setSessionId(session.id);
+    } catch (err) {
+      setLaunchPhase('idle');
+      toast.error("Couldn't prepare your interview", {
+        description:
+          err?.data?.detail || 'Something went wrong. Please try again.',
+      });
+    } finally {
+      startingRef.current = false;
+    }
+  }, [startSession, id]);
+
   const handleWarmupComplete = useCallback(() => {
     router.push(`/dashboard/interviews/${id}/session/${sessionId}`);
   }, [router, id, sessionId]);
-  const handleClose = useCallback(() => setLaunchPhase("idle"), []);
+  const handleClose = useCallback(() => setLaunchPhase('idle'), []);
 
   if (isLoading) {
     return (
@@ -50,10 +114,19 @@ export default function InterviewDetailPage({ params }) {
   if (!interview || error) {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-10 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-border bg-card p-10 text-center"
+        >
           <h1 className="text-2xl font-bold">Interview not found</h1>
-          <p className="mt-2 text-muted-foreground">The selected interview configuration could not be loaded.</p>
-          <Button asChild className="mt-6 gradient-bg text-primary-foreground hover:opacity-90">
+          <p className="mt-2 text-muted-foreground">
+            The selected interview configuration could not be loaded.
+          </p>
+          <Button
+            asChild
+            className="mt-6 gradient-bg text-primary-foreground hover:opacity-90"
+          >
             <Link href="/dashboard/interviews">Back to Interviews</Link>
           </Button>
         </motion.div>
@@ -65,23 +138,36 @@ export default function InterviewDetailPage({ params }) {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-8"
+      >
         <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold">{interview.role}</h1>
-              <Badge className="border-primary/20 bg-primary/10 text-primary">Open</Badge>
+              <Badge className="border-primary/20 bg-primary/10 text-primary">
+                Open
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground">{interview.title}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild variant="outline" className="border-border bg-background/60 hover:bg-secondary/70">
+            <Button
+              asChild
+              variant="outline"
+              className="border-border bg-background/60 hover:bg-secondary/70"
+            >
               <Link href={`/dashboard/interviews/${interview.id}/edit`}>
                 <PencilLine className="h-4 w-4 mr-2" />
                 Edit Interview
               </Link>
             </Button>
-            <Button onClick={handleStartClick} className="gradient-bg text-primary-foreground hover:opacity-90">
+            <Button
+              onClick={handleStartClick}
+              className="gradient-bg text-primary-foreground hover:opacity-90"
+            >
               Start Interview
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
@@ -96,7 +182,9 @@ export default function InterviewDetailPage({ params }) {
                   <item.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{item.label}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    {item.label}
+                  </p>
                   <p className="mt-1 font-medium">{item.value}</p>
                 </div>
               </div>
@@ -109,36 +197,54 @@ export default function InterviewDetailPage({ params }) {
             <div className="mb-6 flex flex-col space-y-1.5">
               <h3 className="flex items-center gap-2 text-xl font-semibold leading-none tracking-tight">
                 <Sparkles className="h-5 w-5 text-primary" />
-                {overview.overview_title || "Interview Overview"}
+                {overview.overview_title || 'Interview Overview'}
               </h3>
             </div>
             <div className="space-y-6">
               <div className="rounded-2xl border border-primary/20 bg-primary/10 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold">{interview.interview_type} Interview</p>
+                    <p className="text-lg font-semibold">
+                      {interview.interview_type} Interview
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {interview.total_questions} Questions · {interview.tech_stack?.join(" + ")}
+                      {interview.total_questions} Questions ·{' '}
+                      {interview.tech_stack?.join(' + ')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Estimated Duration</p>
-                    <p className="mt-1 text-lg font-semibold">{overview.estimated_duration || "45 mins"}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      Estimated Duration
+                    </p>
+                    <p className="mt-1 text-lg font-semibold">
+                      {overview.estimated_duration || '45 mins'}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <Accordion type="single" collapsible defaultValue="summary" className="rounded-2xl border border-border bg-secondary/20 px-4">
+              <Accordion
+                type="single"
+                collapsible
+                defaultValue="summary"
+                className="rounded-2xl border border-border bg-secondary/20 px-4"
+              >
                 <AccordionItem value="summary" className="border-none">
-                  <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">AI Strategy Summary</AccordionTrigger>
+                  <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">
+                    AI Strategy Summary
+                  </AccordionTrigger>
                   <AccordionContent className="pb-4 text-sm text-muted-foreground">
-                    {overview.summary || "Generating your personalized interview strategy..."}
+                    {overview.summary ||
+                      'Generating your personalized interview strategy...'}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="job-description" className="border-none">
-                  <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">Job Description</AccordionTrigger>
+                  <AccordionTrigger className="py-4 text-base font-medium hover:no-underline">
+                    Job Description
+                  </AccordionTrigger>
                   <AccordionContent className="pb-4 text-sm text-muted-foreground">
-                    {interview.job_description || "No job description provided."}
+                    {interview.job_description ||
+                      'No job description provided.'}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -147,12 +253,18 @@ export default function InterviewDetailPage({ params }) {
                 <h3 className="mb-3 font-semibold">Focus Areas</h3>
                 <div className="grid gap-3 md:grid-cols-2">
                   {overview.focus_areas?.map((item) => (
-                    <div key={item} className="rounded-xl border border-border bg-secondary/30 p-4 text-sm">
+                    <div
+                      key={item}
+                      className="rounded-xl border border-border bg-secondary/30 p-4 text-sm"
+                    >
                       {item}
                     </div>
                   ))}
-                  {(!overview.focus_areas || overview.focus_areas.length === 0) && (
-                      <p className="text-sm text-muted-foreground italic">No focus areas identified yet.</p>
+                  {(!overview.focus_areas ||
+                    overview.focus_areas.length === 0) && (
+                    <p className="text-sm text-muted-foreground italic">
+                      No focus areas identified yet.
+                    </p>
                   )}
                 </div>
               </div>
@@ -162,11 +274,16 @@ export default function InterviewDetailPage({ params }) {
           <div className="space-y-6">
             <Card>
               <div className="mb-6 flex flex-col space-y-1.5">
-                <h3 className="text-xl font-semibold leading-none tracking-tight">Technical Stack</h3>
+                <h3 className="text-xl font-semibold leading-none tracking-tight">
+                  Technical Stack
+                </h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {interview.tech_stack?.map((item) => (
-                  <Badge key={item} className="border border-border bg-primary/10 text-primary">
+                  <Badge
+                    key={item}
+                    className="border border-border bg-primary/10 text-primary"
+                  >
                     {item}
                   </Badge>
                 ))}
@@ -175,17 +292,25 @@ export default function InterviewDetailPage({ params }) {
 
             <Card>
               <div className="mb-6 flex flex-col space-y-1.5">
-                <h3 className="text-xl font-semibold leading-none tracking-tight">Preparation Tips</h3>
+                <h3 className="text-xl font-semibold leading-none tracking-tight">
+                  Preparation Tips
+                </h3>
               </div>
               <ul className="space-y-3">
                 {overview.preparation_tips?.map((tip, index) => (
-                  <li key={index} className="flex gap-2 text-sm text-muted-foreground">
+                  <li
+                    key={index}
+                    className="flex gap-2 text-sm text-muted-foreground"
+                  >
                     <span className="text-primary font-bold">•</span>
                     {tip}
                   </li>
                 ))}
-                {(!overview.preparation_tips || overview.preparation_tips.length === 0) && (
-                    <p className="text-sm text-muted-foreground italic">Stay sharp and focused on core fundamentals.</p>
+                {(!overview.preparation_tips ||
+                  overview.preparation_tips.length === 0) && (
+                  <p className="text-sm text-muted-foreground italic">
+                    Stay sharp and focused on core fundamentals.
+                  </p>
                 )}
               </ul>
             </Card>
@@ -194,7 +319,7 @@ export default function InterviewDetailPage({ params }) {
       </motion.div>
 
       <AnimatePresence>
-        {launchPhase === "pre-start" && (
+        {launchPhase === 'pre-start' && (
           <motion.div
             key="pre-start-overlay"
             initial={{ opacity: 0 }}
@@ -203,10 +328,13 @@ export default function InterviewDetailPage({ params }) {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
           >
-            <PreStartModal onStart={handlePreStartComplete} onClose={handleClose} />
+            <PreStartModal
+              onStart={handlePreStartComplete}
+              onClose={handleClose}
+            />
           </motion.div>
         )}
-        {launchPhase === "warmup" && (
+        {launchPhase === 'warmup' && (
           <motion.div
             key="warmup-overlay"
             initial={{ opacity: 0 }}
@@ -215,7 +343,10 @@ export default function InterviewDetailPage({ params }) {
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 bg-background"
           >
-            <WarmupScreen onComplete={handleWarmupComplete} />
+            <WarmupScreen
+              isReady={Boolean(sessionId)}
+              onComplete={handleWarmupComplete}
+            />
           </motion.div>
         )}
       </AnimatePresence>
