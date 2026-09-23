@@ -23,16 +23,27 @@ SUMMARY_FALLBACK_CHARS = 200
 
 
 def _invalid_reason(
-    decision: InterviewerDecision, allowed: Set[Action]
+    decision: InterviewerDecision, allowed: Set[Action], key_points: List[str]
 ) -> Optional[str]:
     if decision.action not in allowed:
         return f"action {decision.action.value} is not allowed"
     if decision.action != Action.END and not decision.question_text.strip():
         return "question_text is empty"
+    if decision.action == Action.FOLLOW_UP:
+        if not decision.followup_reason.strip():
+            return "followup_reason is empty; a follow-up must name what it probes"
+        missing, expected = len(decision.missing_key_points), len(key_points)
+        if missing == 0 or (expected and missing * 2 < expected):
+            return (
+                f"the last answer covered {expected - missing} of {expected} key "
+                "points, which is too complete to spend a follow-up on"
+            )
     return None
 
 
-def _decide(llm, messages, allowed: Set[Action]) -> InterviewerDecision:
+def _decide(
+    llm, messages, allowed: Set[Action], key_points: List[str]
+) -> InterviewerDecision:
     """Ask the LLM for a decision, re-asking once if it breaks the rules."""
     call = dict(
         schema=InterviewerDecision,
@@ -40,7 +51,7 @@ def _decide(llm, messages, allowed: Set[Action]) -> InterviewerDecision:
         temperature=0.4,
     )
     decision = llm(messages, **call)
-    reason = _invalid_reason(decision, allowed)
+    reason = _invalid_reason(decision, allowed, key_points)
     if reason is None:
         return decision
 
@@ -54,7 +65,7 @@ def _decide(llm, messages, allowed: Set[Action]) -> InterviewerDecision:
         },
     ]
     decision = llm(retry_messages, **call)
-    reason = _invalid_reason(decision, allowed)
+    reason = _invalid_reason(decision, allowed, key_points)
     if reason is not None:
         raise LLMError(f"Interviewer returned an invalid decision: {reason}")
     return decision
@@ -92,13 +103,18 @@ def decide_next_question(
     if last is not None and not last.answer_text:
         raise ValueError("The latest question has not been answered yet.")
 
-    allowed = allowed_actions(state, config, has_answer=last is not None)
+    allowed = allowed_actions(
+        state,
+        config,
+        has_answer=last is not None,
+        last_answer=last.answer_text if last else None,
+    )
     if allowed == {Action.END}:
         return InterviewerResult(question=None, state=state)
 
     messages = build_interviewer_messages(config, state, history, allowed)
     decision = _decide(
-        llm, messages, allowed
+        llm, messages, allowed, last.key_points if last else []
     )  # Gets the next question and validates it.
     state = _record_answer_summary(
         state, history, decision.previous_answer_summary

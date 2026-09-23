@@ -2,7 +2,7 @@ import json
 from typing import Dict, List, Optional, Set
 
 from app.ai.interview_engine import prompts
-from app.ai.interview_engine.policy import planned_question_count
+from app.ai.interview_engine.policy import followup_budget, planned_question_count
 from app.ai.interview_engine.schemas import (
     Action,
     EngineState,
@@ -98,6 +98,8 @@ def build_interviewer_messages(
     upcoming_index = state.plan_cursor + 1
     upcoming = state.plan[upcoming_index] if upcoming_index < len(state.plan) else None
 
+    answered = history[-1] if history and history[-1].answer_text else None
+
     progress_text = prompts.PROGRESS_PROMPT.format(
         main_questions_asked=state.main_questions_asked,
         planned_questions=planned_question_count(state, config),
@@ -105,6 +107,9 @@ def build_interviewer_messages(
         recent_questions="\n\n".join(recent) or "None (this is the first question)",
         current_topic=_format_plan_item(current),
         next_topic=_format_plan_item(upcoming),
+        last_key_points=", ".join(answered.key_points) if answered else "None",
+        followups_total=state.followups_total,
+        followup_budget=followup_budget(config),
         followup_used="yes" if state.followup_used else "no",
         allowed_actions=format_actions(allowed),
         summary_instruction=(

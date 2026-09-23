@@ -9,26 +9,48 @@ from app.ai.interview_engine.schemas import (
 )
 
 DIFFICULTY_ORDER = ["EASY", "MEDIUM", "HARD"]
+# One follow-up per this many main questions
+FOLLOWUP_RATIO = 3
+THIN_ANSWER_WORDS = 25
 
 
 def planned_question_count(state: EngineState, config: InterviewConfig) -> int:
     return min(config.total_questions, len(state.plan))
 
 
+def followup_budget(config: InterviewConfig) -> int:
+    """Follow-ups allowed in the whole interview: roughly one per three questions."""
+    return max(1, round(config.total_questions / FOLLOWUP_RATIO))
+
+
+def invites_followup(answer_text: Optional[str]) -> bool:
+    return bool(answer_text) and len(answer_text.split()) <= THIN_ANSWER_WORDS
+
+
 def allowed_actions(
-    state: EngineState, config: InterviewConfig, has_answer: bool
+    state: EngineState,
+    config: InterviewConfig,
+    has_answer: bool,
+    last_answer: Optional[str] = None,
 ) -> Set[Action]:
     """Actions the interviewer may take next.
 
     - First question: always the first plan topic.
-    - At most one follow-up per main question, and only after an answer.
+    - Follow-ups: only after a short answer, at most one per main question, and
+      only while the interview's follow-up budget is left.
     - END only once every planned main question has been asked.
     """
     if state.main_questions_asked == 0:
         return {Action.NEXT_TOPIC}
 
     allowed: Set[Action] = set()
-    if has_answer and not state.followup_used:
+    has_followup_budget = state.followups_total < followup_budget(config)
+    if (
+        has_answer
+        and not state.followup_used
+        and has_followup_budget
+        and invites_followup(last_answer)
+    ):
         allowed.add(Action.FOLLOW_UP)
 
     if state.main_questions_asked < planned_question_count(state, config):
@@ -77,4 +99,5 @@ def apply_action(state: EngineState, action: Action) -> EngineState:
         updated.followup_used = False
     elif action == Action.FOLLOW_UP:
         updated.followup_used = True
+        updated.followups_total += 1
     return updated
