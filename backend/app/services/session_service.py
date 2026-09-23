@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.ai.interview_engine import (
@@ -10,6 +11,8 @@ from app.ai.interview_engine import (
     NextQuestion,
     decide_next_question,
     plan_interview,
+    AskedQuestion,
+    EngineState,
 )
 from app.ai.llm.openai_client import LLMError
 from app.models.interview import Interview
@@ -18,7 +21,10 @@ from app.models.interview_question import (
     QuestionDifficulty,
     QuestionType,
 )
+from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
+from app.models.response_evaluation import ResponseEvaluation
+from app.schemas.session import AnswerSubmit
 
 
 def _get_owned_interview(
@@ -194,4 +200,97 @@ def abandon_session(
 
     _finish_session(session, InterviewSessionStatus.ABANDONED)
     db.commit()
+    return get_session(db, user_id, session_id)
+
+
+def _build_history(
+    questions: List[InterviewQuestion], latest_answer: str
+) -> List[AskedQuestion]:
+    """All asked questions for the engine, with the new answer on the latest one."""
+    history = [
+        AskedQuestion(
+            question_text=q.question_text,
+            topic=q.topic,
+            difficulty=q.difficulty.value,
+            is_followup=q.question_type == QuestionType.FOLLOWUP,
+            answer_text=q.response.response_text if q.response else None,
+        )
+        for q in questions
+    ]
+    history[-1].answer_text = latest_answer
+    return history
+
+
+def submit_answer(
+    db: Session,
+    user_id: uuid.UUID,
+    session_id: uuid.UUID,
+    question_id: uuid.UUID,
+    answer: AnswerSubmit,
+) -> InterviewSession:
+    """Save the answer and the next question together, or finish the interview."""
+    session = get_session(db, user_id, session_id)
+    if session.status != InterviewSessionStatus.IN_PROGRESS:
+        raise HTTPException(status_code=409, detail="This interview is not in progress")
+
+    question = next((q for q in session.questions if q.id == question_id), None)
+    if question is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    if question.response is not None:
+        raise HTTPException(
+            status_code=409, detail="This question has already been answered"
+        )
+    if question is not session.questions[-1]:
+        raise HTTPException(
+            status_code=409, detail="Only the current question can be answered"
+        )
+
+    config = _build_engine_config(session.interview)
+    state = EngineState.model_validate(session.context_memory)
+    history = _build_history(session.questions, answer.response_text)
+    next_order_index = question.order_index + 1
+    db.commit()
+
+    try:
+        result = decide_next_question(config, state, history)
+    except LLMError:
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't get the next question right now. "
+            "Please submit your answer again.",
+        )
+
+    session = db.get(InterviewSession, session_id)
+    if session.status != InterviewSessionStatus.IN_PROGRESS:
+        raise HTTPException(status_code=409, detail="This interview is not in progress")
+
+    db.add(
+        InterviewResponse(
+            question_id=question_id,
+            response_text=answer.response_text,
+            response_time_seconds=answer.response_time_seconds,
+            evaluation=ResponseEvaluation(),
+        )
+    )
+    session.context_memory = result.state.model_dump()
+
+    if result.question is not None:
+        db.add(
+            _to_question_row(
+                session_id,
+                next_order_index,
+                result.question,
+                parent_question_id=question_id if result.question.is_followup else None,
+            )
+        )
+    else:
+        _finish_session(session, InterviewSessionStatus.COMPLETED)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="This question has already been answered"
+        )
     return get_session(db, user_id, session_id)

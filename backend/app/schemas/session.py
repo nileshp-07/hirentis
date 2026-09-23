@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.models.interview_question import QuestionDifficulty, QuestionType
 from app.models.interview_session import InterviewSessionStatus
@@ -45,3 +45,10 @@ class SessionSummary(BaseModel):
 
 class SessionDetail(SessionSummary):
     questions: List[SessionQuestion] = []
+
+
+class AnswerSubmit(BaseModel):
+    response_text: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)
+    ]
+    response_time_seconds: Optional[int] = Field(default=None, ge=0)
