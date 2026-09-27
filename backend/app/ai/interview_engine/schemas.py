@@ -30,6 +30,7 @@ class AskedQuestion(BaseModel):
     difficulty: Optional[Difficulty] = None
     is_followup: bool = False
     answer_text: Optional[str] = None
+    key_points: List[str] = []
 
 
 class PlanItem(BaseModel):
@@ -57,7 +58,15 @@ class InterviewerDecision(BaseModel):
         description="One sentence summarising the candidate's last answer; "
         "empty string when there is no previous answer"
     )
+    missing_key_points: List[str] = Field(
+        description="Key points of the last question the answer did not cover; "
+        "empty list when it covered them or there is no previous answer"
+    )
     action: Action
+    followup_reason: str = Field(
+        description="Why this answer needs probing, naming the exact claim, "
+        "technique or gap; empty string unless the action is FOLLOW_UP"
+    )
     question_text: str
     difficulty: Difficulty
     rubric: Rubric
@@ -70,6 +79,7 @@ class EngineState(BaseModel):
     plan_cursor: int = -1
     main_questions_asked: int = 0
     followup_used: bool = False
+    followups_total: int = 0
     # One line per answered question, oldest first
     running_summary: List[str] = []
 

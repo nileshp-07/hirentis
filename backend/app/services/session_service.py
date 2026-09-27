@@ -214,6 +214,7 @@ def _build_history(
             difficulty=q.difficulty.value,
             is_followup=q.question_type == QuestionType.FOLLOWUP,
             answer_text=q.response.response_text if q.response else None,
+            key_points=(q.rubric or {}).get("key_points", []),
         )
         for q in questions
     ]
