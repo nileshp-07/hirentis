@@ -81,7 +81,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ## ⚙️ 4. Running the Celery Background Workers
 
-Celery is an asynchronous task queue. Make sure your Redis server is actively running.
+Celery is an asynchronous task queue. Answer scoring runs here, so a worker must be
+running for interview answers to be evaluated.
+
+**Start Redis (if you don't have it running):**
+```bash
+docker run -d --name hirentis-redis -p 6379:6379 redis:7-alpine
+```
 
 **Run the Celery Worker:**
 ```bash

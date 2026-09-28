@@ -17,6 +17,7 @@ class Settings:
     OPENAI_MAX_RETRIES: int = int(os.getenv("OPENAI_MAX_RETRIES", "2"))
     LLM_MODEL_PLANNER: str = os.getenv("LLM_MODEL_PLANNER", OPENAI_MODEL)
     LLM_MODEL_INTERVIEWER: str = os.getenv("LLM_MODEL_INTERVIEWER", OPENAI_MODEL)
+    LLM_MODEL_EVALUATOR: str = os.getenv("LLM_MODEL_EVALUATOR", OPENAI_MODEL)
 
     CLERK_WEBHOOK_SECRET: str = os.getenv("CLERK_WEBHOOK_SECRET", "")
     CLERK_SECRET_KEY: str = os.getenv("CLERK_SECRET_KEY", "")

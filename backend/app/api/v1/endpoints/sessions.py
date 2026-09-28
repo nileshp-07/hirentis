@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.session import AnswerSubmit, SessionDetail
-from app.services import session_service
+from app.services import evaluation_service, session_service
 
 router = APIRouter()
 
@@ -38,6 +38,8 @@ def submit_answer(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return session_service.submit_answer(
+    session = session_service.submit_answer(
         db, current_user.id, session_id, question_id, answer
     )
+    evaluation_service.enqueue_session_evaluations(db, session.id)
+    return session

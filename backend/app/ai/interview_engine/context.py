@@ -22,7 +22,7 @@ def _or_none(value: Optional[str]) -> str:
     return value.strip() if value and value.strip() else "None"
 
 
-def _format_candidate_answer(answer: str) -> str:
+def format_candidate_answer(answer: str) -> str:
     # wrap the answer with candidate_answer tags so llm doesn't get confused which part is the answer
     safe = answer.replace("<candidate_answer>", "").replace("</candidate_answer>", "")
     return f"<candidate_answer>\n{safe[:MAX_ANSWER_CHARS]}\n</candidate_answer>"
@@ -77,7 +77,7 @@ def build_interviewer_messages(
     ]:  # Find last RECENT_QUESTIONS questions and answers and format them
         kind = "Follow-up" if asked.is_followup else "Question"
         answer = (
-            _format_candidate_answer(asked.answer_text)
+            format_candidate_answer(asked.answer_text)
             if asked.answer_text
             else "(not answered yet)"
         )
