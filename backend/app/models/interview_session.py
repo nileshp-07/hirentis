@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.interview import Interview
     from app.models.interview_question import InterviewQuestion
+    from app.models.interview_report import InterviewReport
 
 from sqlalchemy import DateTime, Integer, ForeignKey, Enum as SqlEnum, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -55,6 +56,13 @@ class InterviewSession(BaseModel):
         "InterviewQuestion",
         back_populates="session",
         order_by="InterviewQuestion.order_index",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    report: Mapped[Optional["InterviewReport"]] = relationship(
+        "InterviewReport",
+        back_populates="session",
+        uselist=False,
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
