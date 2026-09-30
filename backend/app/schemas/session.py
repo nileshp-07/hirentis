@@ -5,6 +5,7 @@ from typing import Annotated, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.models.interview_question import QuestionDifficulty, QuestionType
+from app.models.interview_report import ReportStatus
 from app.models.interview_session import InterviewSessionStatus
 
 
@@ -52,3 +53,47 @@ class AnswerSubmit(BaseModel):
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)
     ]
     response_time_seconds: Optional[int] = Field(default=None, ge=0)
+
+
+class QuestionFeedback(BaseModel):
+    """One question with the candidate's answer and how it was scored."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    question_id: uuid.UUID
+    order_index: int
+    question_text: str
+    topic: Optional[str] = None
+    question_type: QuestionType
+    difficulty: QuestionDifficulty
+    answer_text: Optional[str] = None
+    score: Optional[float] = None
+    technical_score: Optional[float] = None
+    communication_score: Optional[float] = None
+    problem_solving_score: Optional[float] = None
+    confidence_score: Optional[float] = None
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    improvements: List[str] = []
+    feedback: Optional[str] = None
+
+
+class ReportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    session_id: uuid.UUID
+    interview_id: uuid.UUID
+    session_status: InterviewSessionStatus
+    status: ReportStatus
+    duration_seconds: Optional[int] = None
+    overall_score: Optional[float] = None
+    technical_score: Optional[float] = None
+    communication_score: Optional[float] = None
+    problem_solving_score: Optional[float] = None
+    confidence_score: Optional[float] = None
+    topic_scores: dict = {}
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    improvement_suggestions: List[str] = []
+    ai_summary: Optional[str] = None
+    questions: List[QuestionFeedback] = []
