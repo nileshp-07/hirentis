@@ -72,6 +72,30 @@ class InterviewerDecision(BaseModel):
     rubric: Rubric
 
 
+class AnswerEvaluation(BaseModel):
+    covered_points: List[str] = Field(
+        description="Rubric key points the answer covered"
+    )
+    missed_points: List[str] = Field(
+        description="Rubric key points the answer did not cover"
+    )
+    score: float = Field(description="Overall score for the answer, 0-10")
+    technical_score: float = Field(description="Correctness and depth, 0-10")
+    communication_score: float = Field(description="Clarity and structure, 0-10")
+    problem_solving_score: float = Field(
+        description="Reasoning and trade-off awareness, 0-10"
+    )
+    confidence_score: float = Field(
+        description="How assured and specific the answer sounds, 0-10"
+    )
+    strengths: List[str] = Field(description="1-3 things the candidate did well")
+    weaknesses: List[str] = Field(description="1-3 concrete gaps in this answer")
+    improvements: List[str] = Field(description="1-3 specific, actionable suggestions")
+    feedback: str = Field(
+        description="2-3 sentences of feedback addressed to the candidate"
+    )
+
+
 class EngineState(BaseModel):
     resume_brief: str = ""
     plan: List[PlanItem] = []
