@@ -11,6 +11,7 @@ from app.models.interview_question import (
 )
 from app.models.interview_response import InterviewResponse
 from app.models.response_evaluation import EvaluationStatus, ResponseEvaluation
+from app.models.interview_report import InterviewReport, ReportStatus
 
 __all__ = [
     "Base",
@@ -28,4 +29,6 @@ __all__ = [
     "InterviewResponse",
     "ResponseEvaluation",
     "EvaluationStatus",
+    "InterviewReport",
+    "ReportStatus",
 ]
