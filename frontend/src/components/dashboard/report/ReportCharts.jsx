@@ -35,6 +35,12 @@ const fadeIn = {
   transition: { duration: 0.4 },
 };
 
+const MAX_TOPIC_CHARS = 24;
+const shortTopic = (topic) =>
+  topic.length > MAX_TOPIC_CHARS
+    ? `${topic.slice(0, MAX_TOPIC_CHARS - 1)}�`
+    : topic;
+
 const ChartCard = ({
   title,
   icon: Icon,
@@ -155,6 +161,7 @@ export const TopicScoresChart = ({ data }) => (
               dataKey="topic"
               width={150}
               tick={AXIS_TICK}
+              tickFormatter={shortTopic}
               tickLine={false}
               axisLine={false}
             />

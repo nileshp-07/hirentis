@@ -66,7 +66,9 @@ class QuestionFeedback(BaseModel):
     topic: Optional[str] = None
     question_type: QuestionType
     difficulty: QuestionDifficulty
+    asked_at: datetime
     answer_text: Optional[str] = None
+    submitted_at: Optional[datetime] = None
     score: Optional[float] = None
     technical_score: Optional[float] = None
     communication_score: Optional[float] = None
@@ -83,8 +85,12 @@ class ReportOut(BaseModel):
 
     session_id: uuid.UUID
     interview_id: uuid.UUID
+    interview_title: str
+    interview_role: str
     session_status: InterviewSessionStatus
     status: ReportStatus
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     duration_seconds: Optional[int] = None
     overall_score: Optional[float] = None
     technical_score: Optional[float] = None
