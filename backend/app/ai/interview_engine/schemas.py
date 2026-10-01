@@ -96,6 +96,18 @@ class AnswerEvaluation(BaseModel):
     )
 
 
+class ReportNarrative(BaseModel):
+    summary: str = Field(
+        description="3-5 sentences addressed to the candidate, summarising how the "
+        "interview went overall"
+    )
+    strengths: List[str] = Field(description="2-4 strengths seen across the answers")
+    weaknesses: List[str] = Field(description="2-4 recurring gaps across the answers")
+    improvement_suggestions: List[str] = Field(
+        description="3-5 specific, actionable things to work on before the next interview"
+    )
+
+
 class EngineState(BaseModel):
     resume_brief: str = ""
     plan: List[PlanItem] = []

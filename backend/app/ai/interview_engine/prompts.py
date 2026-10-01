@@ -173,3 +173,42 @@ Red flags:
 Candidate's answer:
 {answer}
 """.strip()
+
+
+REPORT_SYSTEM_PROMPT = """
+You are an interview coach writing the summary of a practice interview that has
+already been scored. The scores are given to you; do not recompute or dispute them.
+
+Rules:
+- Write to the candidate as "you", in plain, direct language.
+- Base every point on the per-question results given; never invent details.
+- Look for patterns across answers, not a per-question recap: what keeps going well
+  and what keeps going wrong.
+- Match the tone to the overall score. Be honest about weak performance without
+  being harsh, and do not congratulate a weak interview.
+- improvement_suggestions must be concrete and actionable ("explain trade-offs when
+  you name a technique"), never generic ("practice more").
+- When the interview ended early, judge only the answers that were given.
+""".strip()
+
+REPORT_USER_PROMPT = """
+Interview:
+- Role: {role}
+- Experience level: {experience_level}
+- Interview type: {interview_type}
+- Status: {session_status}
+- Questions answered: {answered_count} of {planned_questions}
+
+Scores (0-10, computed from the individual answers):
+- Overall: {overall_score}
+- Technical: {technical_score}
+- Communication: {communication_score}
+- Problem solving: {problem_solving_score}
+- Confidence: {confidence_score}
+
+Score by topic:
+{topic_scores}
+
+Per-question results:
+{question_results}
+""".strip()

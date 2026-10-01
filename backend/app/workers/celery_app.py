@@ -5,7 +5,10 @@ celery_app = Celery(
     "worker",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["app.workers.tasks.evaluation_tasks"],
+    include=[
+        "app.workers.tasks.evaluation_tasks",
+        "app.workers.tasks.report_tasks",
+    ],
 )
 
 # We never read task results, and a slow broker must not delay an API request
