@@ -59,7 +59,8 @@ def get_report(
     db: Session = Depends(get_db),
 ):
     session, report = report_service.get_report(db, current_user.id, session_id)
-    if report is None or report.status == ReportStatus.FAILED:
+    needs_report = report is None or report.status == ReportStatus.FAILED
+    if needs_report and report_service.is_reportable(session):
         report_service.request_report(db, session_id)
         session, report = report_service.get_report(db, current_user.id, session_id)
     return report_service.to_report_payload(session, report)

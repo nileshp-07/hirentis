@@ -41,6 +41,9 @@ export const sessionApi = apiSlice.injectEndpoints({
       }),
       onQueryStarted: cacheSession,
     }),
+    getSessionReport: builder.query({
+      query: (sessionId) => `/sessions/${sessionId}/report`,
+    }),
   }),
 });
 
@@ -49,4 +52,5 @@ export const {
   useGetSessionQuery,
   useSubmitAnswerMutation,
   useAbandonSessionMutation,
+  useGetSessionReportQuery,
 } = sessionApi;

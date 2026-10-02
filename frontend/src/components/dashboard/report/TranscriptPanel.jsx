@@ -4,6 +4,7 @@ import { Clock, Sparkles, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { formatDuration as formatClock } from '@/components/session/room/format';
 
 const TranscriptPanel = ({ transcript }) => (
   <Card className="p-0">
@@ -50,10 +51,12 @@ const TranscriptPanel = ({ transcript }) => (
                 <p className="whitespace-pre-wrap text-secondary-foreground">
                   {message.text}
                 </p>
-                <span className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-                  <Clock className="h-2.5 w-2.5" />
-                  {message.time}
-                </span>
+                {message.elapsedSeconds != null && (
+                  <span className="mt-1.5 flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                    <Clock className="h-2.5 w-2.5" />
+                    {formatClock(message.elapsedSeconds)}
+                  </span>
+                )}
               </div>
             </motion.div>
           );

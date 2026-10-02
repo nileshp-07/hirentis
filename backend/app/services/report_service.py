@@ -9,7 +9,7 @@ from app.ai.interview_engine import write_report_narrative
 from app.models.interview_question import InterviewQuestion
 from app.models.interview_report import InterviewReport, ReportStatus
 from app.models.interview_response import InterviewResponse
-from app.models.interview_session import InterviewSession
+from app.models.interview_session import InterviewSession, InterviewSessionStatus
 from app.models.response_evaluation import EvaluationStatus
 from app.db.session import SessionLocal
 from app.services.session_service import _build_engine_config, get_session
@@ -170,6 +170,14 @@ def mark_failed(session_id: uuid.UUID, message: str) -> None:
         db.close()
 
 
+def is_reportable(session: InterviewSession) -> bool:
+    is_finished = session.status in (
+        InterviewSessionStatus.COMPLETED,
+        InterviewSessionStatus.ABANDONED,
+    )
+    return is_finished and any(question.response for question in session.questions)
+
+
 def request_report(db: Session, session_id: uuid.UUID) -> bool:
     """Create the report row if needed and queue generation."""
     from app.workers.tasks.report_tasks import generate_report_task
@@ -223,7 +231,9 @@ def to_report_payload(
                 "topic": question.topic,
                 "question_type": question.question_type,
                 "difficulty": question.difficulty,
+                "asked_at": question.created_at,
                 "answer_text": response.response_text if response else None,
+                "submitted_at": response.submitted_at if response else None,
                 "score": evaluation.score if evaluation else None,
                 "technical_score": evaluation.technical_score if evaluation else None,
                 "communication_score": (
@@ -243,8 +253,12 @@ def to_report_payload(
     return {
         "session_id": session.id,
         "interview_id": session.interview_id,
+        "interview_title": session.interview.title,
+        "interview_role": session.interview.role,
         "session_status": session.status,
         "status": report.status if report else ReportStatus.PENDING,
+        "started_at": session.started_at,
+        "completed_at": session.completed_at,
         "duration_seconds": session.duration_seconds,
         "overall_score": report.overall_score if report else None,
         "technical_score": report.technical_score if report else None,

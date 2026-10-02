@@ -74,11 +74,20 @@ const QuestionItem = ({ question, index }) => {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-3">
-            <Badge
-              className={cn('border text-xs', scoreBadgeClass(question.score))}
-            >
-              {question.score.toFixed(1)}/10
-            </Badge>
+            {question.score == null ? (
+              <Badge className="border border-border bg-secondary text-xs text-muted-foreground">
+                Not scored
+              </Badge>
+            ) : (
+              <Badge
+                className={cn(
+                  'border text-xs',
+                  scoreBadgeClass(question.score)
+                )}
+              >
+                {question.score.toFixed(1)}/10
+              </Badge>
+            )}
             <ChevronDown
               className={cn(
                 'h-4 w-4 text-muted-foreground transition-transform',
