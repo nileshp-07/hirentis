@@ -1,37 +1,11 @@
 'use client';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  CheckCircle2,
-  CircleDot,
-  Clock3,
-  PhoneOff,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import SessionStatusBadge from '@/components/session/SessionStatusBadge';
 import { formatDuration } from './chartTheme';
 
-const STATUS_BADGES = {
-  COMPLETED: {
-    label: 'Completed',
-    icon: CheckCircle2,
-    className: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-500',
-  },
-  ABANDONED: {
-    label: 'Ended early',
-    icon: PhoneOff,
-    className: 'border-border bg-secondary text-muted-foreground',
-  },
-  IN_PROGRESS: {
-    label: 'In progress',
-    icon: CircleDot,
-    className: 'border-primary/30 bg-primary/10 text-primary',
-  },
-};
-
 const ReportHeader = ({ interview, backHref }) => {
-  const badge = STATUS_BADGES[interview.status] ?? STATUS_BADGES.IN_PROGRESS;
   const date = interview.date
     ? new Date(interview.date).toLocaleDateString(undefined, {
         dateStyle: 'medium',
@@ -75,10 +49,7 @@ const ReportHeader = ({ interview, backHref }) => {
         </div>
       </div>
 
-      <Badge className={cn('self-start border', badge.className)}>
-        <badge.icon className="mr-1 h-3 w-3" />
-        {badge.label}
-      </Badge>
+      <SessionStatusBadge status={interview.status} className="self-start" />
     </header>
   );
 };

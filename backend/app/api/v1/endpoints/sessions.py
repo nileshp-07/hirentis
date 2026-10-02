@@ -1,4 +1,6 @@
 import uuid
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -6,10 +8,19 @@ from app.api.deps import get_current_user, get_db
 from app.models.interview_report import ReportStatus
 from app.models.interview_session import InterviewSessionStatus
 from app.models.user import User
-from app.schemas.session import AnswerSubmit, ReportOut, SessionDetail
+from app.schemas.session import AnswerSubmit, ReportOut, SessionAttempt, SessionDetail
 from app.services import evaluation_service, report_service, session_service
 
 router = APIRouter()
+
+
+@router.get("/", response_model=List[SessionAttempt])
+def list_my_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sessions = session_service.list_user_sessions(db, current_user.id)
+    return [session_service.to_attempt(session) for session in sessions]
 
 
 @router.get("/{session_id}", response_model=SessionDetail)

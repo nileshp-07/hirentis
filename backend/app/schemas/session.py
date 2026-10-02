@@ -48,6 +48,14 @@ class SessionDetail(SessionSummary):
     questions: List[SessionQuestion] = []
 
 
+class SessionAttempt(SessionSummary):
+    """One attempt in an interview's history, with its result."""
+
+    answered_count: int = 0
+    overall_score: Optional[float] = None
+    report_status: Optional[ReportStatus] = None
+
+
 class AnswerSubmit(BaseModel):
     response_text: Annotated[
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)

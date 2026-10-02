@@ -26,9 +26,13 @@ import {
 } from '@/components/ui/accordion';
 import PreStartModal from '@/components/session/PreStartModal';
 import WarmupScreen from '@/components/session/WarmupScreen';
+import AttemptHistory from '@/components/dashboard/interviews/AttemptHistory';
 import { toast } from 'sonner';
 import { useGetInterviewQuery } from '@/redux/api/interviewApi';
-import { useStartSessionMutation } from '@/redux/api/sessionApi';
+import {
+  useGetInterviewSessionsQuery,
+  useStartSessionMutation,
+} from '@/redux/api/sessionApi';
 
 const metadataItems = (interview) => [
   {
@@ -71,6 +75,12 @@ export default function InterviewDetailPage({ params }) {
   const router = useRouter();
 
   const { data: interview, isLoading, error } = useGetInterviewQuery(id);
+  const { data: attempts = [] } = useGetInterviewSessionsQuery(id, {
+    refetchOnMountOrArgChange: true,
+  });
+  const activeAttempt = attempts.find(
+    (attempt) => attempt.status === 'IN_PROGRESS'
+  );
 
   const [launchPhase, setLaunchPhase] = useState('idle');
   const [sessionId, setSessionId] = useState(null);
@@ -164,15 +174,33 @@ export default function InterviewDetailPage({ params }) {
                 Edit Interview
               </Link>
             </Button>
-            <Button
-              onClick={handleStartClick}
-              className="gradient-bg text-primary-foreground hover:opacity-90"
-            >
-              Start Interview
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            {activeAttempt ? (
+              <Button
+                asChild
+                className="gradient-bg text-primary-foreground hover:opacity-90"
+              >
+                <Link
+                  href={`/dashboard/interviews/${interview.id}/session/${activeAttempt.id}`}
+                >
+                  Continue Interview
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                onClick={handleStartClick}
+                className="gradient-bg text-primary-foreground hover:opacity-90"
+              >
+                Start Interview
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
           </div>
         </section>
+
+        {attempts.length > 0 && (
+          <AttemptHistory interviewId={interview.id} attempts={attempts} />
+        )}
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {metadataItems(interview).map((item) => (

@@ -20,6 +20,12 @@ export const sessionApi = apiSlice.injectEndpoints({
       }),
       onQueryStarted: cacheSession,
     }),
+    getSessions: builder.query({
+      query: () => '/sessions/',
+    }),
+    getInterviewSessions: builder.query({
+      query: (interviewId) => `/interviews/${interviewId}/sessions`,
+    }),
     getSession: builder.query({
       query: (sessionId) => `/sessions/${sessionId}`,
       providesTags: (result, error, sessionId) => [
@@ -49,6 +55,8 @@ export const sessionApi = apiSlice.injectEndpoints({
 
 export const {
   useStartSessionMutation,
+  useGetSessionsQuery,
+  useGetInterviewSessionsQuery,
   useGetSessionQuery,
   useSubmitAnswerMutation,
   useAbandonSessionMutation,

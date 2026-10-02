@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, CalendarDays, Clock3, PencilLine, Trash2 } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarDays,
+  Clock3,
+  PencilLine,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -29,7 +35,8 @@ const actionLabel = {
 
 export const ActiveInterviewCard = ({ interview, index }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deleteInterview, { isLoading: isDeleting }] = useDeleteInterviewMutation();
+  const [deleteInterview, { isLoading: isDeleting }] =
+    useDeleteInterviewMutation();
 
   const handleDelete = async () => {
     try {
@@ -96,13 +103,19 @@ export const ActiveInterviewCard = ({ interview, index }) => {
                   asChild
                   className="w-full gradient-bg text-primary-foreground hover:opacity-90"
                 >
-                  <Link href={`/dashboard/interviews/${interview.id}`}>
+                  <Link
+                    href={
+                      interview.activeSessionId
+                        ? `/dashboard/interviews/${interview.id}/session/${interview.activeSessionId}`
+                        : `/dashboard/interviews/${interview.id}`
+                    }
+                  >
                     {actionLabel[interview.status]}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Link>
                 </Button>
               )}
-              
+
               <div className="flex gap-2">
                 <Button
                   asChild

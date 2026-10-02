@@ -24,7 +24,7 @@ from app.models.interview_question import (
 from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
 from app.models.response_evaluation import ResponseEvaluation
-from app.schemas.session import AnswerSubmit
+from app.schemas.session import AnswerSubmit, SessionAttempt, SessionSummary
 
 
 def _get_owned_interview(
@@ -179,13 +179,39 @@ def list_sessions(
 ) -> List[InterviewSession]:
     _get_owned_interview(db, user_id, interview_id)
     return (
-        db.query(InterviewSession)
-        .filter(
-            InterviewSession.interview_id == interview_id,
-            InterviewSession.user_id == user_id,
-        )
-        .order_by(InterviewSession.created_at.desc())
+        _attempts_query(db, user_id)
+        .filter(InterviewSession.interview_id == interview_id)
         .all()
+    )
+
+
+def list_user_sessions(db: Session, user_id: uuid.UUID) -> List[InterviewSession]:
+    """Every attempt of the user across all interviews, newest first."""
+    return _attempts_query(db, user_id).all()
+
+
+def _attempts_query(db: Session, user_id: uuid.UUID):
+    """The user's sessions with what an attempt row needs, newest first."""
+    return (
+        db.query(InterviewSession)
+        .options(
+            selectinload(InterviewSession.questions).selectinload(
+                InterviewQuestion.response
+            ),
+            selectinload(InterviewSession.report),
+        )
+        .filter(InterviewSession.user_id == user_id)
+        .order_by(InterviewSession.created_at.desc())
+    )
+
+
+def to_attempt(session: InterviewSession) -> SessionAttempt:
+    report = session.report
+    return SessionAttempt(
+        **SessionSummary.model_validate(session).model_dump(),
+        answered_count=sum(1 for question in session.questions if question.response),
+        overall_score=report.overall_score if report else None,
+        report_status=report.status if report else None,
     )
 
 
