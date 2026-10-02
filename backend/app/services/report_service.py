@@ -1,9 +1,11 @@
 import logging
 import uuid
+from datetime import datetime, timedelta, timezone
 from statistics import mean
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.sql import func
 
 from app.ai.interview_engine import write_report_narrative
 from app.models.interview_question import InterviewQuestion
@@ -22,6 +24,10 @@ SCORE_FIELDS = (
     "problem_solving_score",
     "confidence_score",
 )
+
+
+# A pending report with no progress for this long has most likely lost its jobs
+STALLED_AFTER = timedelta(minutes=2)
 
 
 class ReportNotReady(Exception):
@@ -178,6 +184,23 @@ def is_reportable(session: InterviewSession) -> bool:
     return is_finished and any(question.response for question in session.questions)
 
 
+def is_stalled(session: InterviewSession) -> bool:
+    """A pending report where neither it nor any answer score has changed for a
+    while, e.g. because Redis was down when its jobs were queued."""
+    report = session.report
+    if report is None or report.status != ReportStatus.PENDING:
+        return False
+    last_activity = max(
+        [report.updated_at]
+        + [
+            question.response.evaluation.updated_at
+            for question in session.questions
+            if question.response and question.response.evaluation
+        ]
+    )
+    return datetime.now(timezone.utc) - last_activity > STALLED_AFTER
+
+
 def request_report(db: Session, session_id: uuid.UUID) -> bool:
     """Create the report row if needed and queue generation."""
     from app.workers.tasks.report_tasks import generate_report_task
@@ -190,13 +213,13 @@ def request_report(db: Session, session_id: uuid.UUID) -> bool:
     if report is None:
         report = InterviewReport(session_id=session_id)
         db.add(report)
-        db.commit()
     elif report.status == ReportStatus.COMPLETED:
         return False
-    elif report.status == ReportStatus.FAILED:
+    else:
         report.status = ReportStatus.PENDING
         report.error_message = None
-        db.commit()
+        report.updated_at = func.now()
+    db.commit()
 
     try:
         generate_report_task.delay(str(session_id))

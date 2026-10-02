@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.signals import celeryd_init
 from app.core.config import settings
 
 celery_app = Celery(
@@ -23,6 +24,14 @@ celery_app.conf.update(
         "retry_policy": {"max_retries": 0},
     },
 )
+
+
+@celeryd_init.connect
+def wait_for_broker(conf=None, **kwargs):
+    """Runs only in the worker. The settings above make the API fail fast when
+    Redis is down; the worker should instead wait for Redis and reconnect."""
+    conf.broker_connection_max_retries = None
+
 
 celery_app.conf.task_routes = {
     # 'app.workers.tasks.*': {'queue': 'main-queue'}
