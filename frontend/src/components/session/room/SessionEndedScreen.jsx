@@ -94,16 +94,13 @@ const SessionEndedScreen = ({ session, questions, interviewId }) => {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           {isCompleted ? (
-            <Button
-              disabled
-              title="Detailed reports are coming soon"
-              className="gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              View report
-              <span className="rounded-full bg-primary-foreground/20 px-1.5 py-px text-[10px] font-semibold uppercase">
-                Soon
-              </span>
+            <Button asChild className="gap-2">
+              <Link
+                href={`/dashboard/interviews/${interviewId}/session/${session.id}/report`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                View report
+              </Link>
             </Button>
           ) : (
             <Button asChild className="gap-2">
