@@ -28,6 +28,8 @@ const SessionEndedScreen = ({ session, questions, interviewId }) => {
   const isCompleted = session.status === 'COMPLETED';
   const answered = questions.filter((q) => q.response).length;
   const followups = questions.filter((q) => q.isFollowup).length;
+  const hasReport = answered > 0;
+  const reportHref = `/dashboard/interviews/${interviewId}/session/${session.id}/report`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-background px-4 py-10">
@@ -79,7 +81,9 @@ const SessionEndedScreen = ({ session, questions, interviewId }) => {
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
           {isCompleted
             ? 'Great work! Thanks for taking the time to practice. Your answers are being evaluated and your detailed report will be ready soon.'
-            : 'You ended this interview early. Your answers so far are saved, and you can start a fresh attempt anytime.'}
+            : hasReport
+              ? 'You ended this interview early. Your report will cover the answers you gave, and you can start a fresh attempt anytime.'
+              : 'You ended this interview early. Your answers so far are saved, and you can start a fresh attempt anytime.'}
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -92,18 +96,21 @@ const SessionEndedScreen = ({ session, questions, interviewId }) => {
           />
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          {isCompleted ? (
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+          {hasReport && (
             <Button asChild className="gap-2">
-              <Link
-                href={`/dashboard/interviews/${interviewId}/session/${session.id}/report`}
-              >
+              <Link href={reportHref}>
                 <BarChart3 className="h-4 w-4" />
                 View report
               </Link>
             </Button>
-          ) : (
-            <Button asChild className="gap-2">
+          )}
+          {!isCompleted && (
+            <Button
+              asChild
+              variant={hasReport ? 'outline' : 'default'}
+              className={hasReport ? 'gap-2 border-border' : 'gap-2'}
+            >
               <Link href={`/dashboard/interviews/${interviewId}`}>
                 <RotateCcw className="h-4 w-4" />
                 Start a new attempt

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewResponse
-from app.schemas.session import SessionDetail, SessionSummary
+from app.schemas.session import SessionAttempt, SessionDetail
 from app.services import interview_service, session_service
 
 router = APIRouter()
@@ -79,7 +79,7 @@ def start_session(
 
 @router.get(
     "/{interview_id}/sessions",
-    response_model=List[SessionSummary],
+    response_model=List[SessionAttempt],
     tags=["sessions"],
 )
 def list_sessions(
@@ -87,4 +87,5 @@ def list_sessions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return session_service.list_sessions(db, current_user.id, interview_id)
+    sessions = session_service.list_sessions(db, current_user.id, interview_id)
+    return [session_service.to_attempt(session) for session in sessions]

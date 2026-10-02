@@ -7,27 +7,49 @@ import PageHeader from '@/components/layout/PageHeader';
 import { ActiveInterviewCard } from '@/components/dashboard/interviews/ActiveInterviewCard';
 import { CompletedInterviewCard } from '@/components/dashboard/interviews/CompletedInterviewCard';
 import { useGetInterviewsQuery } from '@/redux/api/interviewApi';
+import { useGetSessionsQuery } from '@/redux/api/sessionApi';
+
+const FINISHED_STATUSES = ['COMPLETED', 'ABANDONED'];
 
 export default function InterviewsPage() {
   const { data: interviews = [], isLoading } = useGetInterviewsQuery();
+  const { data: sessions = [] } = useGetSessionsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
+
+  const activeSessionIds = Object.fromEntries(
+    sessions
+      .filter((session) => session.status === 'IN_PROGRESS')
+      .map((session) => [session.interview_id, session.id])
+  );
 
   const transformInterview = (interview) => ({
     ...interview,
-    status: interview.status || (interview.interview_overview ? 'scheduled' : 'pending'),
-    date: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : 'TBD',
+    status: activeSessionIds[interview.id]
+      ? 'in_progress'
+      : interview.interview_overview
+        ? 'scheduled'
+        : 'pending',
+    activeSessionId: activeSessionIds[interview.id],
+    date: interview.created_at
+      ? new Date(interview.created_at).toLocaleDateString()
+      : 'TBD',
     duration: interview.interview_overview?.estimated_duration || '45 mins',
     techStack: interview.tech_stack || [],
     totalQuestions: interview.total_questions,
     type: interview.interview_type,
   });
 
-  const transformedInterviews = interviews.map(transformInterview);
-
-  const activeInterviews = transformedInterviews.filter(
-    (interview) => interview.status !== 'completed'
+  const activeInterviews = interviews.map(transformInterview);
+  const interviewsById = Object.fromEntries(
+    activeInterviews.map((interview) => [interview.id, interview])
   );
-  const completedInterviews = transformedInterviews.filter(
-    (interview) => interview.status === 'completed'
+
+  const pastAttempts = sessions.filter(
+    (session) =>
+      FINISHED_STATUSES.includes(session.status) &&
+      session.answered_count > 0 &&
+      interviewsById[session.interview_id]
   );
 
   if (isLoading) {
@@ -35,7 +57,9 @@ export default function InterviewsPage() {
       <div className="flex h-[400px] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading your interviews...</p>
+          <p className="text-sm text-muted-foreground">
+            Loading your interviews...
+          </p>
         </div>
       </div>
     );
@@ -99,14 +123,15 @@ export default function InterviewsPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            {completedInterviews.map((interview, index) => (
+            {pastAttempts.map((attempt, index) => (
               <CompletedInterviewCard
-                key={interview.id}
-                interview={interview}
+                key={attempt.id}
+                attempt={attempt}
+                interview={interviewsById[attempt.interview_id]}
                 index={index}
               />
             ))}
-            {completedInterviews.length === 0 && (
+            {pastAttempts.length === 0 && (
               <div className="p-8 text-center border border-dashed rounded-2xl bg-secondary/10 italic text-muted-foreground text-xs">
                 Your history is currently empty.
               </div>
