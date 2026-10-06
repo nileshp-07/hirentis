@@ -1,32 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Brain, MessageSquare, Shield, Target } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import CountUp from '@/components/dashboard/CountUp';
 import { scoreTextClass } from './chartTheme';
-
-const ANIMATION_MS = 900;
-
-const AnimatedScore = ({ target }) => {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    let frame;
-    let startedAt;
-    const step = (timestamp) => {
-      if (!startedAt) startedAt = timestamp;
-      const progress = Math.min((timestamp - startedAt) / ANIMATION_MS, 1);
-      setValue(progress * target);
-      if (progress < 1) frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [target]);
-
-  return <>{value.toFixed(1)}</>;
-};
 
 const ScoreCards = ({ scores }) => {
   const cards = [
@@ -79,7 +58,7 @@ const ScoreCards = ({ scores }) => {
             <span
               className={cn('text-2xl font-bold', scoreTextClass(card.value))}
             >
-              <AnimatedScore target={card.value} />
+              <CountUp value={card.value} decimals={1} />
               <span className="text-sm font-medium text-muted-foreground">
                 /10
               </span>

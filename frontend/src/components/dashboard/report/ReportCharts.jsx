@@ -43,6 +43,7 @@ const shortTopic = (topic) =>
 
 const ChartCard = ({
   title,
+  description,
   icon: Icon,
   height = 'h-64',
   children,
@@ -55,6 +56,9 @@ const ChartCard = ({
           <Icon className="h-4 w-4 text-primary" />
           {title}
         </CardTitle>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
       </CardHeader>
       <div className={height}>
         <ResponsiveContainer width="100%" height="100%">
@@ -65,8 +69,12 @@ const ChartCard = ({
   </motion.div>
 );
 
-export const SkillRadarChart = ({ data }) => (
-  <ChartCard title="Skill profile" icon={RadarIcon}>
+export const SkillRadarChart = ({
+  data,
+  title = 'Skill profile',
+  description,
+}) => (
+  <ChartCard title={title} description={description} icon={RadarIcon}>
     <RadarChart data={data} cx="50%" cy="50%" outerRadius="72%">
       <PolarGrid stroke={GRID_STROKE} />
       <PolarAngleAxis dataKey="skill" tick={AXIS_TICK} />
@@ -84,14 +92,19 @@ export const SkillRadarChart = ({ data }) => (
   </ChartCard>
 );
 
-export const ScoreTrendChart = ({ data }) => (
-  <ChartCard title="Score across the interview" icon={TrendingUp} delay={0.1}>
+export const ScoreTrendChart = ({
+  data,
+  title = 'Score across the interview',
+  description,
+}) => (
+  <ChartCard
+    title={title}
+    description={description}
+    icon={TrendingUp}
+    delay={0.1}
+  >
     <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
-      <CartesianGrid
-        strokeDasharray="3 3"
-        stroke={GRID_STROKE}
-        vertical={false}
-      />
+      <CartesianGrid stroke={GRID_STROKE} vertical={false} />
       <XAxis
         dataKey="label"
         tick={AXIS_TICK}
@@ -105,7 +118,13 @@ export const ScoreTrendChart = ({ data }) => (
         tickLine={false}
         axisLine={false}
       />
-      <Tooltip {...TOOLTIP_PROPS} cursor={{ stroke: GRID_STROKE }} />
+      <Tooltip
+        {...TOOLTIP_PROPS}
+        cursor={{ stroke: GRID_STROKE }}
+        labelFormatter={(label, payload) =>
+          payload?.[0]?.payload?.tooltipLabel ?? label
+        }
+      />
       <Line
         type="monotone"
         dataKey="score"
@@ -143,11 +162,7 @@ export const TopicScoresChart = ({ data }) => (
             margin={{ top: 4, right: 36, bottom: 4, left: 8 }}
             barCategoryGap={10}
           >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke={GRID_STROKE}
-              horizontal={false}
-            />
+            <CartesianGrid stroke={GRID_STROKE} horizontal={false} />
             <XAxis
               type="number"
               domain={SCORE_DOMAIN}
