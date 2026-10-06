@@ -99,11 +99,17 @@ const StatTiles = ({ stats }) => {
               </div>
             </div>
             <p className="text-3xl font-semibold">
-              <CountUp value={tile.value} decimals={tile.decimals} />
-              {tile.suffix && (
-                <span className="text-base font-medium text-muted-foreground">
-                  {tile.suffix}
-                </span>
+              {tile.value == null ? (
+                <span className="text-muted-foreground">-</span>
+              ) : (
+                <>
+                  <CountUp value={tile.value} decimals={tile.decimals} />
+                  {tile.suffix && (
+                    <span className="text-base font-medium text-muted-foreground">
+                      {tile.suffix}
+                    </span>
+                  )}
+                </>
               )}
             </p>
             {tile.footer && (
