@@ -6,6 +6,8 @@ import {
   PanelRightClose,
   PanelRightOpen,
   PhoneOff,
+  Volume2,
+  VolumeX,
   Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,8 @@ const SessionHeader = ({
   totalQuestions,
   sidebarOpen,
   onToggleSidebar,
+  voiceMuted,
+  onToggleVoice,
   onEnd,
 }) => {
   const now = useNow();
@@ -80,6 +84,26 @@ const SessionHeader = ({
             <Clock3 className="h-3.5 w-3.5" />
             {formatDuration(elapsedSeconds)}
           </span>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onToggleVoice}
+            aria-label={
+              voiceMuted ? 'Unmute interviewer voice' : 'Mute interviewer voice'
+            }
+            title={
+              voiceMuted ? 'Unmute interviewer voice' : 'Mute interviewer voice'
+            }
+            className="border-border bg-background/60"
+          >
+            {voiceMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
 
           <Button
             type="button"

@@ -1,8 +1,21 @@
+import threading
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.ai.tts import warm_up as warm_up_voice
 from app.api.v1.router import api_router
 
-app = FastAPI(title="FastAPI Backend")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Loading the voice takes a few seconds; do it off the startup path
+    threading.Thread(target=warm_up_voice, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="FastAPI Backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

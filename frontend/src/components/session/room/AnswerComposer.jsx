@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Mic, SendHorizontal, Timer } from 'lucide-react';
+import { Loader2, Mic, SendHorizontal, Square, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { cn } from '@/lib/utils';
 import VoiceWaveform from './VoiceWaveform';
 import { formatDuration } from './format';
@@ -29,11 +30,41 @@ const writeDraft = (questionId, text) => {
   }
 };
 
-const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
+const appendSpeech = (text, speech) => {
+  const startsSentence = !text.trim() || /[.!?]\s*$/.test(text);
+  const chunk = startsSentence
+    ? speech.charAt(0).toUpperCase() + speech.slice(1)
+    : speech;
+  if (!text) return chunk;
+  return /\s$/.test(text) ? `${text}${chunk}` : `${text} ${chunk}`;
+};
+
+const statusMessage = ({ isSupported, isListening, error }) => {
+  if (!isSupported) {
+    return 'Voice answers need Chrome, Edge or Safari. Type your answer instead.';
+  }
+  if (error) return error;
+  if (isListening) return 'Listening… click Stop when you finish.';
+  return 'Click Speak and answer out loud, or type. Review it before submitting.';
+};
+
+const AnswerComposer = ({
+  questionId,
+  onSubmit,
+  isSubmitting,
+  onStartSpeaking,
+}) => {
   const [text, setText] = useState(() => readDraft(questionId));
   const [elapsed, setElapsed] = useState(0);
   const startedAtRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const appendFinalSpeech = useCallback((speech) => {
+    setText((current) => appendSpeech(current, speech).slice(0, MAX_LENGTH));
+  }, []);
+
+  const { isSupported, isListening, interimText, error, start, stop } =
+    useSpeechRecognition({ onFinalText: appendFinalSpeech });
 
   useEffect(() => {
     startedAtRef.current = Date.now();
@@ -43,13 +74,26 @@ const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    writeDraft(questionId, text);
+  }, [questionId, text]);
+
+  const wasListeningRef = useRef(false);
+  useEffect(() => {
+    if (wasListeningRef.current && !isListening) {
+      const textarea = textareaRef.current;
+      textarea?.focus();
+      textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+    wasListeningRef.current = isListening;
+  }, [isListening]);
+
   const trimmed = text.trim();
-  const canSubmit = trimmed.length > 0 && !isSubmitting;
+  const canSubmit = trimmed.length > 0 && !isSubmitting && !isListening;
+  const displayText = interimText ? appendSpeech(text, interimText) : text;
 
   const handleChange = (event) => {
-    const value = event.target.value.slice(0, MAX_LENGTH);
-    setText(value);
-    writeDraft(questionId, value);
+    setText(event.target.value.slice(0, MAX_LENGTH));
   };
 
   const handleSubmit = async () => {
@@ -69,6 +113,15 @@ const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
     }
   };
 
+  const toggleListening = () => {
+    if (isListening) {
+      stop();
+      return;
+    }
+    onStartSpeaking?.();
+    start();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -80,32 +133,49 @@ const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
       )}
     >
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <div className="relative">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            disabled
-            aria-label="Answer with your voice (coming soon)"
-            title="Voice answers are coming soon — type your answer for now"
-            className="h-10 w-10 rounded-full border-border bg-secondary/40"
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-          <span className="absolute -right-2 -top-2 rounded-full gradient-bg px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
-            Soon
-          </span>
-        </div>
+        <Button
+          type="button"
+          onClick={toggleListening}
+          disabled={!isSupported || isSubmitting}
+          aria-pressed={isListening}
+          variant={isListening ? 'destructive' : 'default'}
+          title={
+            isSupported
+              ? undefined
+              : 'Voice answers need Chrome, Edge or Safari'
+          }
+          className="h-10 shrink-0 gap-2 rounded-full px-4"
+        >
+          {isListening ? (
+            <>
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-60" />
+                <Square className="relative h-2.5 w-2.5 fill-current" />
+              </span>
+              Stop
+            </>
+          ) : (
+            <>
+              <Mic className="h-4 w-4" />
+              Speak
+            </>
+          )}
+        </Button>
 
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-foreground">Your answer</p>
-          <p className="truncate text-[11px] text-muted-foreground">
-            Voice answers are coming soon. Type your answer and review it before
-            submitting.
+          <p
+            role="status"
+            className={cn(
+              'truncate text-[11px]',
+              error ? 'text-amber-500' : 'text-muted-foreground'
+            )}
+          >
+            {statusMessage({ isSupported, isListening, error })}
           </p>
         </div>
 
-        <VoiceWaveform active={false} className="hidden sm:flex" />
+        <VoiceWaveform active={isListening} className="hidden sm:flex" />
 
         <span
           className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-2.5 py-1 font-mono text-xs text-muted-foreground"
@@ -118,16 +188,24 @@ const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
 
       <textarea
         ref={textareaRef}
-        value={text}
+        value={displayText}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         disabled={isSubmitting}
+        readOnly={isListening}
         autoFocus
         rows={6}
         maxLength={MAX_LENGTH}
         aria-label="Your answer"
-        placeholder="Start typing your answer… Explain your reasoning as you would out loud in a real interview."
-        className="block max-h-[40vh] min-h-[150px] w-full resize-y bg-transparent px-4 py-4 text-[15px] leading-relaxed placeholder:text-muted-foreground/70 focus-visible:outline-none disabled:cursor-not-allowed"
+        placeholder={
+          isListening
+            ? 'Listening… start speaking.'
+            : 'Click Speak, or start typing your answer… Explain your reasoning as you would out loud in a real interview.'
+        }
+        className={cn(
+          'block max-h-[40vh] min-h-[150px] w-full resize-y bg-transparent px-4 py-4 text-[15px] leading-relaxed placeholder:text-muted-foreground/70 focus-visible:outline-none disabled:cursor-not-allowed',
+          isListening && 'cursor-default'
+        )}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
@@ -155,6 +233,11 @@ const AnswerComposer = ({ questionId, onSubmit, isSubmitting }) => {
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
+          title={
+            isListening
+              ? 'Stop speaking to review your answer first'
+              : undefined
+          }
           className="min-w-[150px] gap-2 shadow-md shadow-primary/20"
         >
           {isSubmitting ? (
