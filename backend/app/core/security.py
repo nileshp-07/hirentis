@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
+from app.services import user_service
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -83,10 +84,7 @@ def get_current_user(
     if not clerk_user_id:
         raise HTTPException(status_code=401, detail="Invalid token claims")
 
-    user = db.query(User).filter(User.auth_provider_id == clerk_user_id).first()
-    if not user:
-        logger.warning(f"Clerk user {clerk_user_id} authenticated but not in DB.")
-        raise HTTPException(status_code=403, detail="User account not synchronized")
+    user = user_service.get_or_create_user(db, clerk_user_id)
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User account is disabled")
 
