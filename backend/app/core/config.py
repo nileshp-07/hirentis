@@ -20,6 +20,9 @@ class Settings:
     LLM_MODEL_EVALUATOR: str = os.getenv("LLM_MODEL_EVALUATOR", OPENAI_MODEL)
     LLM_MODEL_REPORTER: str = os.getenv("LLM_MODEL_REPORTER", OPENAI_MODEL)
 
+    TTS_VOICE: str = os.getenv("TTS_VOICE", "en_US-ljspeech-medium")
+    TTS_VOICES_DIR: str = os.getenv("TTS_VOICES_DIR", "storage/voices")
+
     CLERK_WEBHOOK_SECRET: str = os.getenv("CLERK_WEBHOOK_SECRET", "")
     CLERK_SECRET_KEY: str = os.getenv("CLERK_SECRET_KEY", "")
     # Frontend API URL of the Clerk instance; differs between dev and production.

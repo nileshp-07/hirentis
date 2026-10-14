@@ -174,6 +174,16 @@ def get_session(
     return session
 
 
+def get_question(
+    db: Session, user_id: uuid.UUID, session_id: uuid.UUID, question_id: uuid.UUID
+) -> InterviewQuestion:
+    session = get_session(db, user_id, session_id)
+    question = next((q for q in session.questions if q.id == question_id), None)
+    if question is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return question
+
+
 def list_sessions(
     db: Session, user_id: uuid.UUID, interview_id: uuid.UUID
 ) -> List[InterviewSession]:

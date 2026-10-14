@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CornerDownRight, Volume2 } from 'lucide-react';
+import { CornerDownRight, Volume2, VolumeX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,14 @@ import { DIFFICULTY_STYLES, QUESTION_TYPE_LABELS, toTitleCase } from './format';
 
 const WORD_DELAY = 0.045;
 
-const QuestionStage = ({ question, isThinking, totalQuestions }) => {
+const QuestionStage = ({
+  question,
+  isThinking,
+  totalQuestions,
+  voiceStatus,
+  onReplay,
+  onStopVoice,
+}) => {
   const [askedQuestionId, setAskedQuestionId] = useState(null);
   const words = question.question_text.split(/\s+/);
 
@@ -20,11 +27,12 @@ const QuestionStage = ({ question, isThinking, totalQuestions }) => {
     return () => clearTimeout(timeout);
   }, [question.id, words.length]);
 
+  const isSpeaking = voiceStatus === 'speaking';
   const status = isThinking
     ? 'thinking'
-    : askedQuestionId === question.id
-      ? 'listening'
-      : 'asking';
+    : isSpeaking || askedQuestionId !== question.id
+      ? 'asking'
+      : 'listening';
 
   return (
     <section className="flex flex-col items-center text-center">
@@ -87,13 +95,34 @@ const QuestionStage = ({ question, isThinking, totalQuestions }) => {
             type="button"
             variant="ghost"
             size="sm"
-            disabled
-            title="Reading questions aloud is coming soon"
-            className="mt-5 gap-2 text-muted-foreground"
+            onClick={isSpeaking ? onStopVoice : onReplay}
+            disabled={isThinking}
+            className={cn(
+              'mt-5 gap-2',
+              voiceStatus === 'blocked'
+                ? 'text-primary'
+                : 'text-muted-foreground'
+            )}
           >
-            <Volume2 className="h-4 w-4" />
-            Replay question
+            {isSpeaking ? (
+              <>
+                <VolumeX className="h-4 w-4" />
+                Stop speaking
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-4 w-4" />
+                {voiceStatus === 'blocked'
+                  ? 'Play question'
+                  : 'Replay question'}
+              </>
+            )}
           </Button>
+          {voiceStatus === 'blocked' && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Your browser paused the audio. Click to hear the question.
+            </p>
+          )}
         </motion.div>
       </AnimatePresence>
     </section>

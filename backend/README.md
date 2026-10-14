@@ -100,6 +100,26 @@ celery -A app.workers.celery_app worker --loglevel=info
 
 ---
 
+## 🔊 5. Interviewer Voice (Text-to-Speech)
+
+Questions are read aloud with [Piper](https://github.com/OHF-Voice/piper1-gpl), which runs
+locally on the CPU. Download the voice model once (about 60 MB, saved under
+`storage/voices`, which git ignores):
+
+```bash
+python -m piper.download_voices en_US-ljspeech-medium --download-dir storage/voices
+```
+
+To use another voice, set `TTS_VOICE` (and optionally `TTS_VOICES_DIR`) in `.env` and
+download it the same way. Check the voice's dataset license first:
+`en_US-ljspeech-medium` and `en_US-kristin-medium` are public domain, but popular voices
+such as `lessac` and `ryan` are licensed for non-commercial use only.
+
+If the model is missing, the API logs the download command and the browser's built-in
+voice reads the questions instead.
+
+---
+
 ## 📂 Project Flow Checklist
 When actively developing on this server, follow this general flow:
 

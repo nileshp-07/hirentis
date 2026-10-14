@@ -12,6 +12,7 @@ import InterviewerOrb from '@/components/session/room/InterviewerOrb';
 import QuestionStage from '@/components/session/room/QuestionStage';
 import SessionEndedScreen from '@/components/session/room/SessionEndedScreen';
 import SessionHeader from '@/components/session/room/SessionHeader';
+import { useInterviewerVoice } from '@/hooks/useInterviewerVoice';
 import {
   SESSION_STATUS,
   useInterviewSession,
@@ -52,6 +53,7 @@ export default function InterviewSessionPage({ params }) {
     submitAnswer,
     endInterview,
   } = useInterviewSession(sessionId);
+  const voice = useInterviewerVoice({ sessionId, question: currentQuestion });
 
   const [sidebarOpen, setSidebarOpen] = useState(initialSidebarOpen);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
@@ -128,6 +130,8 @@ export default function InterviewSessionPage({ params }) {
         totalQuestions={totalQuestions}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => toggleSidebar(!sidebarOpen)}
+        voiceMuted={voice.muted}
+        onToggleVoice={voice.toggleMuted}
         onEnd={() => setConfirmEndOpen(true)}
       />
 
@@ -140,12 +144,16 @@ export default function InterviewSessionPage({ params }) {
                   question={currentQuestion}
                   isThinking={isSubmitting}
                   totalQuestions={totalQuestions}
+                  voiceStatus={voice.status}
+                  onReplay={voice.replay}
+                  onStopVoice={voice.stop}
                 />
                 <AnswerComposer
                   key={currentQuestion.id}
                   questionId={currentQuestion.id}
                   onSubmit={submitAnswer}
                   isSubmitting={isSubmitting}
+                  onStartSpeaking={voice.stop}
                 />
               </>
             ) : (
