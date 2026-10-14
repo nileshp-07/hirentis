@@ -19,6 +19,7 @@ class Profile(BaseModel):
     avatar_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     experience_years: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     target_role: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    tech_stack: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     skills: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
