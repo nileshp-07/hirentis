@@ -22,7 +22,7 @@ def _primary_email(clerk_user: dict) -> str:
     return address or f"{clerk_user['id']}@users.noreply.clerk"
 
 
-def _full_name(clerk_user: dict, email: str) -> str:
+def full_name_from_clerk(clerk_user: dict, email: str) -> str:
     name = " ".join(
         part
         for part in (clerk_user.get("first_name"), clerk_user.get("last_name"))
@@ -62,7 +62,7 @@ def create_from_clerk(db: Session, clerk_user: dict) -> User:
         is_active=True,
     )
     user.profile = Profile(
-        full_name=_full_name(clerk_user, email),
+        full_name=full_name_from_clerk(clerk_user, email),
         avatar_url=clerk_user.get("image_url"),
     )
     db.add(user)

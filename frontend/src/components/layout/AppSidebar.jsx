@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Video,
   FileText,
+  UserRound,
   ChevronLeft,
   Zap,
 } from 'lucide-react';
@@ -14,6 +15,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Video, label: 'Interviews', path: '/dashboard/interviews' },
   { icon: FileText, label: 'Resume', path: '/dashboard/resume' },
+  { icon: UserRound, label: 'Profile', path: '/dashboard/profile' },
 ];
 
 const AppSidebar = ({ collapsed, onToggle }) => {
