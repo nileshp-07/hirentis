@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.ai.interview_engine import (
+    CandidateProfile,
     InterviewConfig,
     NextQuestion,
     decide_next_question,
@@ -23,6 +24,7 @@ from app.models.interview_question import (
 )
 from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
+from app.models.profile import Profile
 from app.models.response_evaluation import ResponseEvaluation
 from app.schemas.session import AnswerSubmit, SessionAttempt, SessionSummary
 
@@ -72,6 +74,21 @@ def _build_engine_config(interview: Interview) -> InterviewConfig:
     )
 
 
+def _load_candidate_profile(
+    db: Session, user_id: uuid.UUID
+) -> Optional[CandidateProfile]:
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    if profile is None:
+        return None
+    return CandidateProfile(
+        target_role=profile.target_role,
+        experience_years=profile.experience_years,
+        tech_stack=profile.tech_stack or [],
+        skills=profile.skills or [],
+        bio=profile.bio,
+    )
+
+
 def _to_question_row(
     session_id: uuid.UUID,
     order_index: int,
@@ -95,10 +112,12 @@ def _to_question_row(
 
 
 def _prepare_first_question(
-    config: InterviewConfig, resume_data: dict
+    config: InterviewConfig,
+    resume_data: dict,
+    profile: Optional[CandidateProfile],
 ) -> Tuple[dict, NextQuestion]:
     try:
-        state = plan_interview(config, resume_data)
+        state = plan_interview(config, resume_data, profile)
         result = decide_next_question(config, state, [])
     except LLMError:
         raise HTTPException(
@@ -132,10 +151,13 @@ def start_session(
 
     config = _build_engine_config(interview)
     resume_data = (interview.resume.parsed_data if interview.resume else None) or {}
+    profile = _load_candidate_profile(db, user_id)
     existing_id = existing.id if existing else None
     db.commit()
 
-    context_memory, first_question = _prepare_first_question(config, resume_data)
+    context_memory, first_question = _prepare_first_question(
+        config, resume_data, profile
+    )
 
     session = db.get(InterviewSession, existing_id) if existing_id else None
     if session is None:

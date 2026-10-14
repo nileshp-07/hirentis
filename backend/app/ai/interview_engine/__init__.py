@@ -8,6 +8,7 @@ from app.ai.interview_engine.schemas import (
     InterviewerResult,
     EngineState,
     InterviewConfig,
+    CandidateProfile,
     NextQuestion,
     AskedQuestion,
 )
@@ -22,6 +23,7 @@ __all__ = [
     "InterviewerResult",
     "EngineState",
     "InterviewConfig",
+    "CandidateProfile",
     "NextQuestion",
     "AskedQuestion",
 ]
