@@ -7,10 +7,16 @@ Rules:
   mostly SYSTEM_DESIGN topics; BEHAVIORAL or HR -> BEHAVIORAL topics.
 - Ground topics in the job description, the tech stack and the candidate's resume
   (projects, work experience, and technical skills). Include at least one topic about a resume project.
+- The candidate profile is what the candidate wrote about themselves: target role,
+  experience, tech stack, skills and background. Use it with the resume to choose
+  topics. The interview settings come first: when the profile disagrees with them
+  (role, experience level, tech stack), follow the interview settings; when a
+  setting is missing, the profile may fill the gap.
 - Every topic must be distinct; never plan two topics that test the same thing.
 - Start easier and get harder, within what is reasonable for the experience level.
 - `focus` says what to probe for that topic, so the interviewer can ask a good question.
-- `resume_brief` is a short neutral summary of the candidate, relevant to this role.
+- `resume_brief` is a short neutral summary of the candidate from their resume and
+  profile, relevant to this role.
 """.strip()
 
 PLANNER_USER_PROMPT = """
@@ -25,6 +31,9 @@ Interview:
 
 Candidate resume (parsed):
 {resume_data}
+
+Candidate profile (written by the candidate):
+{profile}
 """.strip()
 
 

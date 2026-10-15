@@ -5,6 +5,7 @@ from app.ai.interview_engine import prompts
 from app.ai.interview_engine.policy import followup_budget, planned_question_count
 from app.ai.interview_engine.schemas import (
     Action,
+    CandidateProfile,
     EngineState,
     InterviewConfig,
     PlanItem,
@@ -34,7 +35,16 @@ def _format_plan_item(item: Optional[PlanItem]) -> str:
     return f"{item.topic} ({item.question_type}, {item.difficulty}) - {item.focus}"
 
 
-def build_planner_messages(config: InterviewConfig, resume_data: dict) -> List[Message]:
+def _format_profile(profile: Optional[CandidateProfile]) -> str:
+    filled = profile.model_dump(exclude_defaults=True) if profile else {}
+    return json.dumps(filled, indent=2) if filled else "None"
+
+
+def build_planner_messages(
+    config: InterviewConfig,
+    resume_data: dict,
+    profile: Optional[CandidateProfile] = None,
+) -> List[Message]:
     return [
         {"role": "system", "content": prompts.PLANNER_SYSTEM_PROMPT},
         {
@@ -47,6 +57,7 @@ def build_planner_messages(config: InterviewConfig, resume_data: dict) -> List[M
                 tech_stack=", ".join(config.tech_stack) or "None",
                 job_description=_or_none(config.job_description),
                 resume_data=json.dumps(resume_data or {}, indent=2),
+                profile=_format_profile(profile),
             ),
         },
     ]

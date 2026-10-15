@@ -22,6 +22,16 @@ class InterviewConfig(BaseModel):
     total_questions: int = Field(ge=1)
 
 
+class CandidateProfile(BaseModel):
+    """What the candidate wrote about themselves on their profile page."""
+
+    target_role: Optional[str] = None
+    experience_years: Optional[int] = None
+    tech_stack: List[str] = []
+    skills: List[str] = []
+    bio: Optional[str] = None
+
+
 class AskedQuestion(BaseModel):
     """A question already asked in the session, with the answer once submitted."""
 
