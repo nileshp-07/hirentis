@@ -31,6 +31,8 @@ export default function InterviewBuilder() {
     isEditing,
     isFetching,
     isSubmitting,
+    isPrefilledFromProfile,
+    canContinue,
     handleAddTech,
     handleRemoveTech,
     handleNext,
@@ -59,6 +61,7 @@ export default function InterviewBuilder() {
             setTechInput={setTechInput}
             handleAddTech={handleAddTech}
             handleRemoveTech={handleRemoveTech}
+            isPrefilledFromProfile={isPrefilledFromProfile}
           />
         );
       case 2:
@@ -154,17 +157,30 @@ export default function InterviewBuilder() {
 
         <div className="flex gap-3">
           {currentStep < steps.length ? (
-            <Button type="button" onClick={handleNext}>
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={!canContinue}
+              title={
+                canContinue
+                  ? undefined
+                  : 'Add an interview title and target role to continue'
+              }
+            >
               Continue
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
-                 <>
-                   <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                   Generating Strategy...
-                 </>
+                <>
+                  <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                  Generating Strategy...
+                </>
               ) : (
                 <>
                   Finish Configuration
