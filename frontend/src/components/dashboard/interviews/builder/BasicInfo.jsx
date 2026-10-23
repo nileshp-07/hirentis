@@ -1,4 +1,5 @@
-import { Plus, X } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, UserRound, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -18,9 +19,26 @@ export const BasicInfo = ({
   setTechInput,
   handleAddTech,
   handleRemoveTech,
+  isPrefilledFromProfile,
 }) => {
   return (
     <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {isPrefilledFromProfile && (
+        <p className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground md:col-span-2">
+          <UserRound className="h-4 w-4 shrink-0 text-primary" />
+          <span>
+            Role, experience and tech stack are filled in from your{' '}
+            <Link
+              href="/dashboard/profile"
+              className="font-medium text-primary hover:underline"
+            >
+              profile
+            </Link>
+            . Change them for this interview if you need to.
+          </span>
+        </p>
+      )}
+
       <div className="space-y-2 md:col-span-2">
         <Label htmlFor="title">Interview title</Label>
         <Input

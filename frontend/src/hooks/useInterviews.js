@@ -6,11 +6,26 @@ import {
   useCreateInterviewMutation,
   useUpdateInterviewMutation,
 } from '@/redux/api/interviewApi';
+import { useGetProfileQuery } from '@/redux/api/profileApi';
 import { useGetResumesQuery } from '@/redux/api/resumeApi';
 
 const STEPS = ['Basic Info', 'Resume Selection', 'Job Description'];
-const DEFAULT_JD =
-  'Build polished frontend experiences, collaborate with product and design, and communicate implementation tradeoffs clearly across teams.';
+
+const experienceOption = (years) => {
+  if (years == null) return '';
+  if (years <= 1) return '0-1 years';
+  if (years === 2) return '2 years';
+  if (years <= 5) return '3-5 years';
+  return '5+ years';
+};
+
+const hasProfileDefaults = (profile) =>
+  Boolean(
+    profile &&
+    (profile.target_role ||
+      profile.experience_years != null ||
+      profile.tech_stack.length > 0)
+  );
 
 export const useInterviews = () => {
   const router = useRouter();
@@ -22,6 +37,9 @@ export const useInterviews = () => {
       skip: !id,
     });
   const { data: resumes = [] } = useGetResumesQuery();
+  const { data: profile } = useGetProfileQuery(undefined, {
+    skip: Boolean(id),
+  });
 
   const [createInterview, { isLoading: isCreating }] =
     useCreateInterviewMutation();
@@ -36,14 +54,26 @@ export const useInterviews = () => {
 
   const [form, setForm] = useState({
     title: '',
-    role: 'Frontend Engineer',
-    experience_level: '2 years',
+    role: '',
+    experience_level: '',
     interview_type: 'TECHNICAL',
     total_questions: '10',
-    tech_stack: ['React', 'Next.js', 'Tailwind'],
+    tech_stack: [],
     resume_id: '',
-    job_description: DEFAULT_JD,
+    job_description: '',
   });
+
+  const [profileApplied, setProfileApplied] = useState(false);
+  if (!isEditing && profile && !profileApplied) {
+    setProfileApplied(true);
+    setForm((prev) => ({
+      ...prev,
+      role: prev.role || profile.target_role || '',
+      experience_level:
+        prev.experience_level || experienceOption(profile.experience_years),
+      tech_stack: prev.tech_stack.length ? prev.tech_stack : profile.tech_stack,
+    }));
+  }
 
   const [loadedInterviewId, setLoadedInterviewId] = useState(null);
   if (editingInterview && editingInterview.id !== loadedInterviewId) {
@@ -51,7 +81,7 @@ export const useInterviews = () => {
     setForm({
       title: editingInterview.title || '',
       role: editingInterview.role || '',
-      experience_level: editingInterview.experience_level || '2 years',
+      experience_level: editingInterview.experience_level || '',
       interview_type: editingInterview.interview_type || 'TECHNICAL',
       total_questions: String(editingInterview.total_questions || 10),
       tech_stack: editingInterview.tech_stack || [],
@@ -90,14 +120,24 @@ export const useInterviews = () => {
     }));
   }, []);
 
-  const handleNext = () =>
+  const canContinue =
+    currentStep !== 1 ||
+    Boolean(resolvedForm.title.trim() && resolvedForm.role.trim());
+
+  const handleNext = () => {
+    if (!canContinue) return;
     setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+  };
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handleSubmit = async () => {
     try {
       const payload = {
         ...resolvedForm,
+        title: resolvedForm.title.trim(),
+        role: resolvedForm.role.trim(),
+        experience_level: resolvedForm.experience_level || null,
+        job_description: resolvedForm.job_description.trim() || null,
         resume_id: resolvedForm.resume_id || null,
         total_questions: parseInt(resolvedForm.total_questions, 10) || 5,
       };
@@ -130,6 +170,8 @@ export const useInterviews = () => {
     isEditing,
     isFetching,
     isSubmitting: isCreating || isUpdating,
+    isPrefilledFromProfile: !isEditing && hasProfileDefaults(profile),
+    canContinue,
     handleAddTech,
     handleRemoveTech,
     handleNext,
