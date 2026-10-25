@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.resume import ResumeResponse
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, limit_resume_upload
 from app.models.user import User
 from app.services import resume_service
 import uuid
@@ -13,7 +13,7 @@ router = APIRouter()
 def upload_resume(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(limit_resume_upload),
 ):
     ext = file.filename.split(".")[-1].lower()
     if ext not in ["pdf", "doc", "docx"]:

@@ -41,6 +41,9 @@ We manage all dependencies inside our `pyproject.toml` file. With `uv`, you can 
    REDIS_URL=redis://localhost:6379/0
    OPENAI_API_KEY=your_key_here
    ```
+   Per-user rate limits on the AI endpoints are counted in Redis and are on by
+   default. Set `RATE_LIMIT_ENABLED=false` to turn them off while developing. If
+   Redis is down, requests are allowed rather than blocked.
 
 ---
 
