@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.ai.tts import warm_up as warm_up_voice
 from app.api.v1.router import api_router
+from app.core.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -16,6 +17,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="FastAPI Backend", lifespan=lifespan)
+
+register_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
