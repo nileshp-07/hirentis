@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from app.models.interview import Interview, InterviewType
 from app.models.resume import Resume
 from app.schemas.interview import InterviewCreate, InterviewUpdate
+from app.services.profile_service import get_candidate_profile
+from app.ai.interview_engine import CandidateProfile
+from app.ai.interview_engine.context import _format_profile
 from app.ai.llm.openai_client import LLMError, generate_structured
 from app.ai.llm.output_schemas import InterviewOverview
 from app.ai.llm.prompt_templates import (
@@ -26,6 +29,7 @@ def generate_overview(
     tech_stack: Optional[List[str]],
     interview_type: InterviewType,
     total_questions: int,
+    profile: Optional[CandidateProfile] = None,
 ) -> dict:
     exp_display = experience_level
     if experience_level and experience_level.isdigit():
@@ -45,6 +49,7 @@ def generate_overview(
                 tech_stack=json.dumps(tech_stack) if tech_stack else "None",
                 job_description=job_description or "None",
                 resume_data=json.dumps(resume_data),
+                profile=_format_profile(profile),
             ),
         },
     ]
@@ -90,6 +95,7 @@ def create_interview(
         tech_stack=interview_in.tech_stack,
         interview_type=interview_in.interview_type,
         total_questions=interview_in.total_questions,
+        profile=get_candidate_profile(db, user_id),
     )
 
     new_interview = Interview(
@@ -182,6 +188,7 @@ def update_interview(
                 total_questions=update_data.get(
                     "total_questions", db_interview.total_questions
                 ),
+                profile=get_candidate_profile(db, user_id),
             )
 
     for field, value in update_data.items():

@@ -13,8 +13,12 @@ Resume Text:
 
 INTERVIEW_OVERVIEW_SYSTEM_PROMPT = """
 You are an expert technical interviewer preparing a briefing for a candidate
-before a practice interview. Base the overview on the interview configuration and
-the candidate's resume.
+before a practice interview. Base the overview on the interview configuration, the
+candidate's resume and their profile.
+
+The profile is what the candidate wrote about themselves. When it disagrees with the
+interview configuration (role, experience level, tech stack), follow the
+configuration; when a configuration field is missing, the profile may fill the gap.
 """.strip()
 
 INTERVIEW_OVERVIEW_USER_PROMPT = """
@@ -28,4 +32,7 @@ Interview Details:
 
 Candidate Resume Data:
 {resume_data}
+
+Candidate Profile (written by the candidate):
+{profile}
 """.strip()

@@ -1,9 +1,12 @@
 import logging
+import uuid
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.ai.interview_engine import CandidateProfile
 from app.models.profile import Profile
 from app.models.user import User
 from app.schemas.profile import ProfileUpdate
@@ -41,3 +44,19 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> Profile:
     db.commit()
     db.refresh(profile)
     return profile
+
+
+def get_candidate_profile(
+    db: Session, user_id: uuid.UUID
+) -> Optional[CandidateProfile]:
+    """The user's profile as the AI prompts take it, or None if they have none."""
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    if profile is None:
+        return None
+    return CandidateProfile(
+        target_role=profile.target_role,
+        experience_years=profile.experience_years,
+        tech_stack=profile.tech_stack or [],
+        skills=profile.skills or [],
+        bio=profile.bio,
+    )
