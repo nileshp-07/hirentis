@@ -3,7 +3,7 @@ import threading
 from typing import Optional
 
 import httpx
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -51,6 +51,7 @@ class ClerkAuth:
 
 
 def get_current_user(
+    request: Request,
     auth: HTTPAuthorizationCredentials = Security(security),
     db: Session = Depends(get_db),
 ) -> User:
@@ -85,6 +86,7 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token claims")
 
     user = user_service.get_or_create_user(db, clerk_user_id)
+    request.state.user_id = user.id
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User account is disabled")
 

@@ -9,6 +9,7 @@ from sqlalchemy.exc import OperationalError, TimeoutError as PoolTimeoutError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.ai.llm.openai_client import LLMError
+from app.core.logger import request_id_var
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,12 @@ def _error(
     code = STATUS_CODES.get(status_code, "error")
     return JSONResponse(
         status_code=status_code,
-        content={"detail": detail, "code": code, **extra},
+        content={
+            "detail": detail,
+            "code": code,
+            "request_id": request_id_var.get(),
+            **extra,
+        },
         headers=dict(headers) if headers else None,
     )
 

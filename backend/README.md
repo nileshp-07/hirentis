@@ -123,6 +123,18 @@ voice reads the questions instead.
 
 ---
 
+## 📝 6. Logging
+
+The API and the Celery worker log to stdout, one line per event. Every line carries a
+request ID (the task ID in the worker), and the API returns it in the `X-Request-ID`
+header and in error responses, so a failed request can be found in the logs.
+
+* `LOG_LEVEL` sets the level (default `INFO`).
+* `LOG_FORMAT` is `text` (readable, the default when `ENV=development`) or `json`
+  (one JSON object per line, the default in other environments).
+
+---
+
 ## 📂 Project Flow Checklist
 When actively developing on this server, follow this general flow:
 
