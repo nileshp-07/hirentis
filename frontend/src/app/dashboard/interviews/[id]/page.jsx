@@ -7,10 +7,10 @@ import {
   ArrowRight,
   CalendarDays,
   Clock3,
-  MapPin,
+  History,
+  ListOrdered,
   PencilLine,
   Sparkles,
-  Target,
   UserRound,
   Wrench,
   LoaderCircle,
@@ -25,6 +25,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import PreStartModal from '@/components/session/PreStartModal';
+import SessionStatusBadge from '@/components/session/SessionStatusBadge';
 import WarmupScreen from '@/components/session/WarmupScreen';
 import AttemptHistory from '@/components/dashboard/interviews/AttemptHistory';
 import { toast } from 'sonner';
@@ -34,7 +35,21 @@ import {
   useStartSessionMutation,
 } from '@/redux/api/sessionApi';
 
-const metadataItems = (interview) => [
+const INTERVIEW_TYPE_LABELS = {
+  TECHNICAL: 'Technical',
+  BEHAVIORAL: 'Behavioral',
+  SYSTEM_DESIGN: 'System Design',
+  HR: 'HR',
+};
+
+const interviewTypeLabel = (type) => INTERVIEW_TYPE_LABELS[type] ?? type;
+
+const formatExperience = (level) => {
+  if (!level) return 'Not specified';
+  return isNaN(level) ? level : `${level} years`;
+};
+
+const metadataItems = (interview, attempts) => [
   {
     icon: CalendarDays,
     label: 'Created At',
@@ -42,31 +57,23 @@ const metadataItems = (interview) => [
       ? new Date(interview.created_at).toLocaleDateString()
       : 'TBD',
   },
-  { icon: MapPin, label: 'Location', value: 'Remote' },
-  { icon: Wrench, label: 'Type', value: interview.interview_type },
+  {
+    icon: Wrench,
+    label: 'Type',
+    value: interviewTypeLabel(interview.interview_type),
+  },
+  { icon: ListOrdered, label: 'Questions', value: interview.total_questions },
   {
     icon: Clock3,
     label: 'Duration',
     value: interview.interview_overview?.estimated_duration || '45 mins',
   },
   {
-    icon: Target,
-    label: 'Difficulty',
-    value: interview.experience_level
-      ? isNaN(interview.experience_level)
-        ? interview.experience_level
-        : `${interview.experience_level} Years`
-      : 'Standard',
-  },
-  {
     icon: UserRound,
     label: 'Experience',
-    value: interview.experience_level
-      ? isNaN(interview.experience_level)
-        ? interview.experience_level
-        : `${interview.experience_level} Years`
-      : 'Not Specified',
+    value: formatExperience(interview.experience_level),
   },
+  { icon: History, label: 'Attempts', value: attempts.length },
 ];
 
 export default function InterviewDetailPage({ params }) {
@@ -157,9 +164,7 @@ export default function InterviewDetailPage({ params }) {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold">{interview.role}</h1>
-              <Badge className="border-primary/20 bg-primary/10 text-primary">
-                Open
-              </Badge>
+              {activeAttempt && <SessionStatusBadge status="IN_PROGRESS" />}
             </div>
             <p className="text-sm text-muted-foreground">{interview.title}</p>
           </div>
@@ -203,7 +208,7 @@ export default function InterviewDetailPage({ params }) {
         )}
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {metadataItems(interview).map((item) => (
+          {metadataItems(interview, attempts).map((item) => (
             <Card key={item.label}>
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -233,7 +238,7 @@ export default function InterviewDetailPage({ params }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-lg font-semibold">
-                      {interview.interview_type} Interview
+                      {interviewTypeLabel(interview.interview_type)} Interview
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {interview.total_questions} Questions ·{' '}

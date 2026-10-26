@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="FastAPI Backend", lifespan=lifespan)
+app = FastAPI(title="Hirentis API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +30,7 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root() -> dict:
-    return {"message": "Welcome to the FastAPI Backend"}
+    return {"message": "Welcome to the Hirentis API"}
 
 
 @app.get("/health")

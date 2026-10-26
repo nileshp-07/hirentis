@@ -24,9 +24,9 @@ from app.models.interview_question import (
 )
 from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
-from app.models.profile import Profile
 from app.models.response_evaluation import ResponseEvaluation
 from app.schemas.session import AnswerSubmit, SessionAttempt, SessionSummary
+from app.services.profile_service import get_candidate_profile
 
 
 def _get_owned_interview(
@@ -71,21 +71,6 @@ def _build_engine_config(interview: Interview) -> InterviewConfig:
         tech_stack=interview.tech_stack or [],
         job_description=interview.job_description,
         total_questions=interview.total_questions,
-    )
-
-
-def _load_candidate_profile(
-    db: Session, user_id: uuid.UUID
-) -> Optional[CandidateProfile]:
-    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
-    if profile is None:
-        return None
-    return CandidateProfile(
-        target_role=profile.target_role,
-        experience_years=profile.experience_years,
-        tech_stack=profile.tech_stack or [],
-        skills=profile.skills or [],
-        bio=profile.bio,
     )
 
 
@@ -151,7 +136,7 @@ def start_session(
 
     config = _build_engine_config(interview)
     resume_data = (interview.resume.parsed_data if interview.resume else None) or {}
-    profile = _load_candidate_profile(db, user_id)
+    profile = get_candidate_profile(db, user_id)
     existing_id = existing.id if existing else None
     db.commit()
 
