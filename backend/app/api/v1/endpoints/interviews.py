@@ -3,7 +3,12 @@ from typing import List
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import (
+    get_current_user,
+    get_db,
+    limit_interview_write,
+    limit_session_start,
+)
 from app.models.user import User
 from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewResponse
 from app.schemas.session import SessionAttempt, SessionDetail
@@ -15,7 +20,7 @@ router = APIRouter()
 @router.post("/", response_model=InterviewResponse, status_code=status.HTTP_201_CREATED)
 def create_interview(
     interview: InterviewCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(limit_interview_write),
     db: Session = Depends(get_db),
 ):
     return interview_service.create_interview(db, current_user.id, interview)
@@ -41,7 +46,7 @@ def get_interview(
 def update_interview(
     interview_id: uuid.UUID,
     interview: InterviewUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(limit_interview_write),
     db: Session = Depends(get_db),
 ):
     return interview_service.update_interview(
@@ -68,7 +73,7 @@ def delete_interview(
 def start_session(
     interview_id: uuid.UUID,
     response: Response,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(limit_session_start),
     db: Session = Depends(get_db),
 ):
     session, created = session_service.start_session(db, current_user.id, interview_id)

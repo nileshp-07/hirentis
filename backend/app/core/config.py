@@ -10,6 +10,9 @@ class Settings:
         "DATABASE_URL", "postgresql://user:password@localhost:5432/db"
     )
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    RATE_LIMIT_ENABLED: bool = (
+        os.getenv("RATE_LIMIT_ENABLED", "true").lower() != "false"
+    )
 
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")

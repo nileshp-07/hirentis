@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.ai.tts import TTSUnavailable, synthesize_speech
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, limit_answer_submit
 from app.models.interview_report import ReportStatus
 from app.models.interview_session import InterviewSessionStatus
 from app.models.user import User
@@ -83,7 +83,7 @@ def submit_answer(
     session_id: uuid.UUID,
     question_id: uuid.UUID,
     answer: AnswerSubmit,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(limit_answer_submit),
     db: Session = Depends(get_db),
 ):
     session = session_service.submit_answer(
