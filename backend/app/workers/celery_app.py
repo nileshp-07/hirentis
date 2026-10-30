@@ -1,5 +1,13 @@
 from celery import Celery
-from celery.signals import celeryd_init, setup_logging, task_postrun, task_prerun
+from celery.signals import (
+    celeryd_init,
+    setup_logging,
+    task_postrun,
+    task_prerun,
+    worker_process_shutdown,
+    worker_shutdown,
+)
+from app.ai.llm import tracing
 from app.core.config import settings
 from app.core.logger import configure_logging, request_id_var
 
@@ -49,6 +57,15 @@ def bind_task_id(task_id=None, **kwargs):
 @task_postrun.connect
 def unbind_task_id(**kwargs):
     request_id_var.set(None)
+
+
+@worker_process_shutdown.connect
+def flush_traces(**kwargs):
+    """Send the Langfuse traces still buffered when a worker process exits."""
+    tracing.flush()
+
+
+worker_shutdown.connect(flush_traces)
 
 
 celery_app.conf.task_routes = {

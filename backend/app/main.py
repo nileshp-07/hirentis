@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ai.llm import tracing
 from app.ai.tts import warm_up as warm_up_voice
 from app.api.v1.router import api_router
 from app.core.errors import register_error_handlers
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     # Loading the voice takes a few seconds; do it off the startup path
     threading.Thread(target=warm_up_voice, daemon=True).start()
     yield
+    tracing.flush()
 
 
 app = FastAPI(title="Hirentis API", lifespan=lifespan)

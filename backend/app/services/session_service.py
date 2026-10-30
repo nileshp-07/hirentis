@@ -16,6 +16,7 @@ from app.ai.interview_engine import (
     EngineState,
 )
 from app.ai.llm.openai_client import LLMError
+from app.ai.llm.tracing import trace_owner
 from app.models.interview import Interview
 from app.models.interview_question import (
     InterviewQuestion,
@@ -138,15 +139,18 @@ def start_session(
     resume_data = (interview.resume.parsed_data if interview.resume else None) or {}
     profile = get_candidate_profile(db, user_id)
     existing_id = existing.id if existing else None
+    session_id = existing_id or uuid.uuid4()
     db.commit()
 
-    context_memory, first_question = _prepare_first_question(
-        config, resume_data, profile
-    )
+    with trace_owner(user_id=user_id, session_id=session_id):
+        context_memory, first_question = _prepare_first_question(
+            config, resume_data, profile
+        )
 
     session = db.get(InterviewSession, existing_id) if existing_id else None
     if session is None:
         session = InterviewSession(
+            id=session_id,
             interview_id=interview_id,
             user_id=user_id,
             status=InterviewSessionStatus.IN_PROGRESS,
@@ -296,7 +300,8 @@ def submit_answer(
     db.commit()
 
     try:
-        result = decide_next_question(config, state, history)
+        with trace_owner(user_id=user_id, session_id=session_id):
+            result = decide_next_question(config, state, history)
     except LLMError:
         raise HTTPException(
             status_code=502,
