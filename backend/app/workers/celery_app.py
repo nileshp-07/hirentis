@@ -1,6 +1,7 @@
 from celery import Celery
-from celery.signals import celeryd_init
+from celery.signals import celeryd_init, setup_logging, task_postrun, task_prerun
 from app.core.config import settings
+from app.core.logger import configure_logging, request_id_var
 
 celery_app = Celery(
     "worker",
@@ -31,6 +32,23 @@ def wait_for_broker(conf=None, **kwargs):
     """Runs only in the worker. The settings above make the API fail fast when
     Redis is down; the worker should instead wait for Redis and reconnect."""
     conf.broker_connection_max_retries = None
+
+
+@setup_logging.connect
+def use_app_logging(**kwargs):
+    """Log like the API instead of in Celery's own format."""
+    configure_logging()
+
+
+@task_prerun.connect
+def bind_task_id(task_id=None, **kwargs):
+    """In the worker, the task ID takes the place of the request ID in logs."""
+    request_id_var.set(task_id)
+
+
+@task_postrun.connect
+def unbind_task_id(**kwargs):
+    request_id_var.set(None)
 
 
 celery_app.conf.task_routes = {

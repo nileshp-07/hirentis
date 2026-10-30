@@ -7,6 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.ai.tts import warm_up as warm_up_voice
 from app.api.v1.router import api_router
 from app.core.errors import register_error_handlers
+from app.core.logger import configure_logging
+from app.core.request_logging import REQUEST_ID_HEADER, log_requests
+
+configure_logging()
 
 
 @asynccontextmanager
@@ -26,7 +30,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[REQUEST_ID_HEADER],
 )
+
+app.middleware("http")(log_requests)
 
 app.include_router(api_router, prefix="/api/v1")
 

@@ -6,6 +6,10 @@ load_dotenv()
 
 class Settings:
     ENV: str = os.getenv("ENV", "development")
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()
+    LOG_FORMAT: str = os.getenv(
+        "LOG_FORMAT", "text" if ENV == "development" else "json"
+    ).lower()
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", "postgresql://user:password@localhost:5432/db"
     )
