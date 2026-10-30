@@ -1,6 +1,7 @@
 import logging
+import time
 from functools import lru_cache
-from typing import Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from openai import OpenAI, OpenAIError
 from pydantic import BaseModel
@@ -10,6 +11,8 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
+
+MAX_LOGGED_ERROR_CHARS = 300
 
 
 class LLMError(Exception):
@@ -27,6 +30,33 @@ def get_client() -> OpenAI:
     )
 
 
+def _log_call(
+    purpose: str,
+    model: str,
+    started: float,
+    outcome: str,
+    usage: Any = None,
+    error: Optional[str] = None,
+) -> None:
+    """One line per model call: what it was for, how long it took, tokens used."""
+    details = getattr(usage, "prompt_tokens_details", None)
+    fields = {
+        "purpose": purpose,
+        "model": model,
+        "outcome": outcome,
+        "duration_ms": round((time.perf_counter() - started) * 1000),
+        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+        "cached_tokens": getattr(details, "cached_tokens", None),
+        "completion_tokens": getattr(usage, "completion_tokens", None),
+    }
+    if error:
+        fields["error"] = error[:MAX_LOGGED_ERROR_CHARS]
+
+    message = " ".join(f"{k}={v}" for k, v in fields.items() if v is not None)
+    level = {"ok": logging.INFO, "error": logging.ERROR}.get(outcome, logging.WARNING)
+    logger.log(level, f"llm_call {message}", extra={"event": "llm_call", **fields})
+
+
 def generate_structured(
     messages: List[Dict[str, str]],
     schema: Type[T],
@@ -34,24 +64,29 @@ def generate_structured(
     temperature: float = 0.2,
 ) -> T:
     """Call the model with Structured Outputs and return a validated `schema` instance."""
+    purpose, model = schema.__name__, model or settings.OPENAI_MODEL
+    client = get_client()
+    started = time.perf_counter()
     try:
-        completion = get_client().chat.completions.parse(
-            model=model or settings.OPENAI_MODEL,
+        completion = client.chat.completions.parse(
+            model=model,
             messages=messages,
             response_format=schema,
             temperature=temperature,
         )
     except OpenAIError as e:
-        logger.error(f"OpenAI structured call failed ({schema.__name__}): {e}")
+        _log_call(purpose, model, started, "error", error=str(e))
         raise LLMError(str(e)) from e
 
     message = completion.choices[0].message
     if message.refusal:
-        logger.warning(f"OpenAI refused ({schema.__name__}): {message.refusal}")
+        _log_call(purpose, model, started, "refused", completion.usage, message.refusal)
         raise LLMError(f"Model refused the request: {message.refusal}")
     if message.parsed is None:
-        raise LLMError(f"Model returned no parsable {schema.__name__} output.")
+        _log_call(purpose, model, started, "empty", completion.usage)
+        raise LLMError(f"Model returned no parsable {purpose} output.")
 
+    _log_call(purpose, model, started, "ok", completion.usage)
     return message.parsed
 
 
@@ -61,18 +96,24 @@ def generate_text(
     temperature: float = 0.2,
     max_tokens: Optional[int] = None,
 ) -> str:
+    model = model or settings.OPENAI_MODEL
+    client = get_client()
+    started = time.perf_counter()
     try:
-        completion = get_client().chat.completions.create(
-            model=model or settings.OPENAI_MODEL,
+        completion = client.chat.completions.create(
+            model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
     except OpenAIError as e:
-        logger.error(f"OpenAI text call failed: {e}")
+        _log_call("text", model, started, "error", error=str(e))
         raise LLMError(str(e)) from e
 
     content = completion.choices[0].message.content
     if not content:
+        _log_call("text", model, started, "empty", completion.usage)
         raise LLMError("Model returned an empty response.")
+
+    _log_call("text", model, started, "ok", completion.usage)
     return content
