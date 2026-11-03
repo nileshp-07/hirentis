@@ -1,62 +1,57 @@
+import logging
 import os
 import shutil
-import uuid
-import logging
-from fastapi import UploadFile, HTTPException
-from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
+import tempfile
+
+from fastapi import HTTPException, UploadFile
+from langchain_community.document_loaders import Docx2txtLoader, PyPDFLoader
 
 logger = logging.getLogger(__name__)
 
-UPLOAD_DIR = "storage/resumes"
+LOADERS = {".pdf": PyPDFLoader, ".docx": Docx2txtLoader, ".doc": Docx2txtLoader}
 
 
-def delete_file(file_path: str) -> None:
+def _remove(path: str) -> None:
     try:
-        os.remove(file_path)
+        os.remove(path)
     except FileNotFoundError:
         pass
     except OSError as e:
-        logger.warning(f"Could not delete file {file_path}: {e}")
+        logger.warning(f"Could not delete temporary file {path}: {e}")
 
 
-def save_and_extract_text_from_file(file: UploadFile) -> tuple[str, str]:
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+def extract_text_from_upload(file: UploadFile) -> str:
+    """The text of an uploaded resume. The file is only kept on disk while it is
+    read, in a temporary file deleted straight after; the original isn't stored."""
+    extension = os.path.splitext(file.filename)[1].lower()
+    loader_class = LOADERS.get(extension)
+    if loader_class is None:
+        raise HTTPException(status_code=400, detail="Unsupported file format.")
 
-    file_extension = os.path.splitext(file.filename)[1].lower()
-    file_id = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(UPLOAD_DIR, file_id)
-
+    fd, path = tempfile.mkstemp(prefix="resume-", suffix=extension)
     try:
-        with open(file_path, "wb") as f:
-            shutil.copyfileobj(file.file, f)
-    except Exception as e:
-        logger.error(f"Failed to save file {file.filename}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Could not save the uploaded file.")
+        try:
+            with os.fdopen(fd, "wb") as tmp:
+                shutil.copyfileobj(file.file, tmp)
+        except Exception as e:
+            logger.error(f"Failed to save file {file.filename}: {e}")
+            raise HTTPException(
+                status_code=500, detail="Could not save the uploaded file."
+            )
 
-    try:
-        if file_extension == ".pdf":
-            loader = PyPDFLoader(file_path)
-        elif file_extension in [".docx", ".doc"]:
-            loader = Docx2txtLoader(file_path)
-        else:
-            raise HTTPException(status_code=400, detail="Unsupported file format.")
+        try:
+            docs = loader_class(path).load()
+        except Exception as e:
+            logger.error(f"LangChain extraction error for {file.filename}: {e}")
+            raise HTTPException(
+                status_code=500, detail="Failed to process document content."
+            )
+    finally:
+        _remove(path)
 
-        docs = loader.load()
-        text = "\n".join([doc.page_content for doc in docs])
-    except HTTPException:
-        delete_file(file_path)
-        raise
-    except Exception as e:
-        delete_file(file_path)
-        logger.error(f"LangChain extraction error for {file.filename}: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail="Failed to process document content."
-        )
-
+    text = "\n".join(doc.page_content for doc in docs)
     if not text.strip():
-        delete_file(file_path)
         raise HTTPException(
             status_code=400, detail="The file appears to be empty or unreadable."
         )
-
-    return file_path, text
+    return text

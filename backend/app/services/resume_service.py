@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.resume import Resume
-from app.utils.file_parser import delete_file, save_and_extract_text_from_file
+from app.utils.file_parser import extract_text_from_upload
 from app.ai.llm.openai_client import LLMError, generate_structured
 from app.ai.llm.tracing import trace_owner
 from app.ai.llm.output_schemas import ParsedResume
@@ -25,20 +25,18 @@ def parse_resume_content(text: str) -> ParsedResume:
 
 
 def process_resume_upload(db: Session, user_id: uuid.UUID, file):
-    file_path, text = save_and_extract_text_from_file(file)
+    text = extract_text_from_upload(file)
 
     try:
         with trace_owner(user_id=user_id):
             parsed = parse_resume_content(text)
     except LLMError:
-        delete_file(file_path)
         raise HTTPException(
             status_code=502,
             detail="We couldn't analyze your resume right now. Please try again.",
         )
 
     if not parsed.is_resume:
-        delete_file(file_path)
         raise HTTPException(
             status_code=400,
             detail="The uploaded file does not appear to be a professional resume. Please upload a valid resume.",
@@ -52,7 +50,6 @@ def process_resume_upload(db: Session, user_id: uuid.UUID, file):
     new_resume = Resume(
         user_id=user_id,
         title=file.filename,
-        file_path=file_path,
         raw_text=text,
         parsed_data=parsed_json,
         is_active=True,

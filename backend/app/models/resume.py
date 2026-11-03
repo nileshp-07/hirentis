@@ -11,7 +11,6 @@ class Resume(BaseModel):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(1024), nullable=False)
     raw_text: Mapped[str] = mapped_column(Text, nullable=True)
     parsed_data: Mapped[dict] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
