@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.resume import Resume
 from app.utils.file_parser import delete_file, save_and_extract_text_from_file
 from app.ai.llm.openai_client import LLMError, generate_structured
+from app.ai.llm.tracing import trace_owner
 from app.ai.llm.output_schemas import ParsedResume
 from app.ai.llm.prompt_templates import (
     RESUME_PARSING_SYSTEM_PROMPT,
@@ -27,7 +28,8 @@ def process_resume_upload(db: Session, user_id: uuid.UUID, file):
     file_path, text = save_and_extract_text_from_file(file)
 
     try:
-        parsed = parse_resume_content(text)
+        with trace_owner(user_id=user_id):
+            parsed = parse_resume_content(text)
     except LLMError:
         delete_file(file_path)
         raise HTTPException(

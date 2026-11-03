@@ -135,6 +135,24 @@ header and in error responses, so a failed request can be found in the logs.
 
 ---
 
+## 🔍 7. AI Call Tracing (Langfuse)
+
+Optional. When both keys are set, every OpenAI call is traced in
+[Langfuse](https://langfuse.com) with its full prompt and response, tokens, cost and
+latency. Calls are grouped by user and by interview session, so one interview can be
+followed from the plan to the report. Without the keys nothing is traced.
+
+```dotenv
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com   # your project's region
+```
+
+Traces include candidates' resumes and answers, so only set the keys where sending
+that data to Langfuse is acceptable.
+
+---
+
 ## 📂 Project Flow Checklist
 When actively developing on this server, follow this general flow:
 

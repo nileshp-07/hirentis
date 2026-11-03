@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from openai import OpenAI, OpenAIError
 from pydantic import BaseModel
 
+from app.ai.llm import tracing
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,10 @@ class LLMError(Exception):
 def get_client() -> OpenAI:
     if not settings.OPENAI_API_KEY:
         raise LLMError("OPENAI_API_KEY is not configured.")
+
+    if tracing.is_enabled():
+        tracing.instrument_openai()
+
     return OpenAI(
         api_key=settings.OPENAI_API_KEY,
         timeout=settings.OPENAI_TIMEOUT_SECONDS,
@@ -57,6 +62,10 @@ def _log_call(
     logger.log(level, f"llm_call {message}", extra={"event": "llm_call", **fields})
 
 
+def _trace_kwargs(purpose: str) -> Dict[str, str]:
+    return {"name": purpose} if tracing.is_enabled() else {}
+
+
 def generate_structured(
     messages: List[Dict[str, str]],
     schema: Type[T],
@@ -68,12 +77,14 @@ def generate_structured(
     client = get_client()
     started = time.perf_counter()
     try:
-        completion = client.chat.completions.parse(
-            model=model,
-            messages=messages,
-            response_format=schema,
-            temperature=temperature,
-        )
+        with tracing.call_attributes(purpose):
+            completion = client.chat.completions.parse(
+                model=model,
+                messages=messages,
+                response_format=schema,
+                temperature=temperature,
+                **_trace_kwargs(purpose),
+            )
     except OpenAIError as e:
         _log_call(purpose, model, started, "error", error=str(e))
         raise LLMError(str(e)) from e
@@ -100,12 +111,14 @@ def generate_text(
     client = get_client()
     started = time.perf_counter()
     try:
-        completion = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        with tracing.call_attributes("text"):
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **_trace_kwargs("text"),
+            )
     except OpenAIError as e:
         _log_call("text", model, started, "error", error=str(e))
         raise LLMError(str(e)) from e

@@ -12,6 +12,7 @@ from app.services.profile_service import get_candidate_profile
 from app.ai.interview_engine import CandidateProfile
 from app.ai.interview_engine.context import _format_profile
 from app.ai.llm.openai_client import LLMError, generate_structured
+from app.ai.llm.tracing import trace_owner
 from app.ai.llm.output_schemas import InterviewOverview
 from app.ai.llm.prompt_templates import (
     INTERVIEW_OVERVIEW_SYSTEM_PROMPT,
@@ -87,16 +88,17 @@ def create_interview(
             status_code=400, detail="Please upload an active resume first"
         )
 
-    overview = generate_overview(
-        resume_data=resume.parsed_data,
-        job_description=interview_in.job_description,
-        role=interview_in.role,
-        experience_level=interview_in.experience_level,
-        tech_stack=interview_in.tech_stack,
-        interview_type=interview_in.interview_type,
-        total_questions=interview_in.total_questions,
-        profile=get_candidate_profile(db, user_id),
-    )
+    with trace_owner(user_id=user_id):
+        overview = generate_overview(
+            resume_data=resume.parsed_data,
+            job_description=interview_in.job_description,
+            role=interview_in.role,
+            experience_level=interview_in.experience_level,
+            tech_stack=interview_in.tech_stack,
+            interview_type=interview_in.interview_type,
+            total_questions=interview_in.total_questions,
+            profile=get_candidate_profile(db, user_id),
+        )
 
     new_interview = Interview(
         **interview_in.model_dump(exclude={"resume_id"}),
@@ -172,24 +174,25 @@ def update_interview(
         resume = db.query(Resume).filter(Resume.id == current_resume_id).first()
 
         if resume and resume.parsed_data:
-            new_overview = generate_overview(
-                resume_data=resume.parsed_data,
-                job_description=update_data.get(
-                    "job_description", db_interview.job_description
-                ),
-                role=update_data.get("role", db_interview.role),
-                experience_level=update_data.get(
-                    "experience_level", db_interview.experience_level
-                ),
-                tech_stack=update_data.get("tech_stack", db_interview.tech_stack),
-                interview_type=update_data.get(
-                    "interview_type", db_interview.interview_type
-                ),
-                total_questions=update_data.get(
-                    "total_questions", db_interview.total_questions
-                ),
-                profile=get_candidate_profile(db, user_id),
-            )
+            with trace_owner(user_id=user_id):
+                new_overview = generate_overview(
+                    resume_data=resume.parsed_data,
+                    job_description=update_data.get(
+                        "job_description", db_interview.job_description
+                    ),
+                    role=update_data.get("role", db_interview.role),
+                    experience_level=update_data.get(
+                        "experience_level", db_interview.experience_level
+                    ),
+                    tech_stack=update_data.get("tech_stack", db_interview.tech_stack),
+                    interview_type=update_data.get(
+                        "interview_type", db_interview.interview_type
+                    ),
+                    total_questions=update_data.get(
+                        "total_questions", db_interview.total_questions
+                    ),
+                    profile=get_candidate_profile(db, user_id),
+                )
 
     for field, value in update_data.items():
         setattr(db_interview, field, value)

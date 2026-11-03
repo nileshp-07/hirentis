@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy.orm import Session, joinedload
 
 from app.ai.interview_engine import AnswerEvaluation, evaluate_answer
+from app.ai.llm.tracing import trace_owner
 from app.db.session import SessionLocal
 from app.models.interview_question import InterviewQuestion
 from app.models.interview_response import InterviewResponse
@@ -64,14 +65,17 @@ def score_response(response_id: uuid.UUID) -> bool:
         )
         question = response.question
 
-        scored = evaluate_answer(
-            _build_engine_config(question.session.interview),
-            question_text=question.question_text,
-            answer_text=response.response_text,
-            rubric=question.rubric,
-            topic=question.topic,
-            difficulty=question.difficulty.value,
-        )
+        with trace_owner(
+            user_id=question.session.user_id, session_id=question.session_id
+        ):
+            scored = evaluate_answer(
+                _build_engine_config(question.session.interview),
+                question_text=question.question_text,
+                answer_text=response.response_text,
+                rubric=question.rubric,
+                topic=question.topic,
+                difficulty=question.difficulty.value,
+            )
         _apply(evaluation, scored)
         db.commit()
         return True

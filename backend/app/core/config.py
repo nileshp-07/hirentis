@@ -27,6 +27,12 @@ class Settings:
     LLM_MODEL_EVALUATOR: str = os.getenv("LLM_MODEL_EVALUATOR", OPENAI_MODEL)
     LLM_MODEL_REPORTER: str = os.getenv("LLM_MODEL_REPORTER", OPENAI_MODEL)
 
+    LANGFUSE_PUBLIC_KEY: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    LANGFUSE_SECRET_KEY: str = os.getenv("LANGFUSE_SECRET_KEY", "")
+    LANGFUSE_BASE_URL: str = os.getenv(
+        "LANGFUSE_BASE_URL", "https://cloud.langfuse.com"
+    )
+
     TTS_VOICE: str = os.getenv("TTS_VOICE", "en_US-ljspeech-medium")
     TTS_VOICES_DIR: str = os.getenv("TTS_VOICES_DIR", "storage/voices")
 

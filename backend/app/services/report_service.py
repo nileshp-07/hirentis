@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql import func
 
 from app.ai.interview_engine import write_report_narrative
+from app.ai.llm.tracing import trace_owner
 from app.models.interview_question import InterviewQuestion
 from app.models.interview_report import InterviewReport, ReportStatus
 from app.models.interview_response import InterviewResponse
@@ -135,14 +136,15 @@ def generate_report(session_id: uuid.UUID, allow_partial: bool = False) -> bool:
             raise ReportNotReady(f"{_unscored_count(session)} answers still scoring")
 
         scores, topic_scores = aggregate_scores(scored)
-        narrative = write_report_narrative(
-            _build_engine_config(session.interview),
-            session_status=session.status.value,
-            answered_count=len(scored),
-            scores=scores,
-            topic_scores=topic_scores,
-            question_results=_question_results(scored),
-        )
+        with trace_owner(user_id=session.user_id, session_id=session.id):
+            narrative = write_report_narrative(
+                _build_engine_config(session.interview),
+                session_status=session.status.value,
+                answered_count=len(scored),
+                scores=scores,
+                topic_scores=topic_scores,
+                question_results=_question_results(scored),
+            )
 
         for field, value in scores.items():
             setattr(report, field, value)
