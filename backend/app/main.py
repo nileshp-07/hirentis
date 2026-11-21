@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.ai.llm import tracing
 from app.ai.tts import warm_up as warm_up_voice
 from app.api.v1.router import api_router
+from app.core.config import settings
 from app.core.errors import register_error_handlers
 from app.core.logger import configure_logging
 from app.core.request_logging import REQUEST_ID_HEADER, log_requests
@@ -22,14 +23,18 @@ async def lifespan(app: FastAPI):
     tracing.flush()
 
 
+if not settings.CORS_ORIGINS:
+    raise RuntimeError(
+        "Set CORS_ORIGINS to the frontend's URL, e.g. https://hirentis.vercel.app"
+    )
+
 app = FastAPI(title="Hirentis API", lifespan=lifespan)
 
 register_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=settings.CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=[REQUEST_ID_HEADER],
