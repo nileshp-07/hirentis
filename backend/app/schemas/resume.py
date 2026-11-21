@@ -8,7 +8,7 @@ class ProjectSchema(BaseModel):
     title: str
     description: Optional[str] = None
     tech_stack: List[str] = Field(default_factory=list, alias="technologies")
-    
+
     class Config:
         populate_by_name = True
 

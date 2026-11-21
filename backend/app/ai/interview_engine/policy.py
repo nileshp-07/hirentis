@@ -8,10 +8,13 @@ from app.ai.interview_engine.schemas import (
     InterviewConfig,
 )
 
+INTERVIEWER_NAME = "Alex"
+
 DIFFICULTY_ORDER = ["EASY", "MEDIUM", "HARD"]
-# One follow-up per this many main questions
-FOLLOWUP_RATIO = 3
-THIN_ANSWER_WORDS = 25
+FOLLOWUP_SHARE = 0.4
+MIN_MAIN_QUESTIONS_BEFORE_FOLLOWUP = 2
+MAX_CLARIFICATIONS = 2
+MIN_QUESTIONS_FOR_INTRO = 4
 
 
 def planned_question_count(state: EngineState, config: InterviewConfig) -> int:
@@ -19,39 +22,42 @@ def planned_question_count(state: EngineState, config: InterviewConfig) -> int:
 
 
 def followup_budget(config: InterviewConfig) -> int:
-    """Follow-ups allowed in the whole interview: roughly one per three questions."""
-    return max(1, round(config.total_questions / FOLLOWUP_RATIO))
+    """Follow-ups allowed in the whole interview: about two per five questions."""
+    return max(1, round(config.total_questions * FOLLOWUP_SHARE))
 
 
-def invites_followup(answer_text: Optional[str]) -> bool:
-    return bool(answer_text) and len(answer_text.split()) <= THIN_ANSWER_WORDS
+def includes_intro(config: InterviewConfig) -> bool:
+    return config.total_questions >= MIN_QUESTIONS_FOR_INTRO
 
 
 def allowed_actions(
     state: EngineState,
     config: InterviewConfig,
     has_answer: bool,
-    last_answer: Optional[str] = None,
 ) -> Set[Action]:
     """Actions the interviewer may take next.
 
     - First question: always the first plan topic.
-    - Follow-ups: only after a short answer, at most one per main question, and
-      only while the interview's follow-up budget is left.
+    - Follow-ups: at most one per main question, not on the warm-up, and only
+      while the interview's follow-up budget is left. Whether an answer earns one
+      is the interviewer's call, based on what was said and not on how long it was.
+    - REPHRASE: while the question has been repeated fewer than the limit.
     - END only once every planned main question has been asked.
     """
     if state.main_questions_asked == 0:
         return {Action.NEXT_TOPIC}
 
     allowed: Set[Action] = set()
-    has_followup_budget = state.followups_total < followup_budget(config)
     if (
         has_answer
         and not state.followup_used
-        and has_followup_budget
-        and invites_followup(last_answer)
+        and state.main_questions_asked >= MIN_MAIN_QUESTIONS_BEFORE_FOLLOWUP
+        and state.followups_total < followup_budget(config)
     ):
         allowed.add(Action.FOLLOW_UP)
+
+    if has_answer and state.clarifications_used < MAX_CLARIFICATIONS:
+        allowed.add(Action.REPHRASE)
 
     if state.main_questions_asked < planned_question_count(state, config):
         allowed.add(Action.NEXT_TOPIC)
@@ -97,7 +103,11 @@ def apply_action(state: EngineState, action: Action) -> EngineState:
         updated.plan_cursor += 1
         updated.main_questions_asked += 1
         updated.followup_used = False
+        updated.clarifications_used = 0
     elif action == Action.FOLLOW_UP:
         updated.followup_used = True
         updated.followups_total += 1
+        updated.clarifications_used = 0
+    elif action == Action.REPHRASE:
+        updated.clarifications_used += 1
     return updated

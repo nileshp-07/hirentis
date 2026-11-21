@@ -10,7 +10,23 @@ Difficulty = Literal["EASY", "MEDIUM", "HARD"]
 class Action(str, Enum):
     NEXT_TOPIC = "NEXT_TOPIC"
     FOLLOW_UP = "FOLLOW_UP"
+    REPHRASE = "REPHRASE"
     END = "END"
+
+
+class AnswerType(str, Enum):
+    ANSWER = "ANSWER"
+    CLARIFICATION_REQUEST = "CLARIFICATION_REQUEST"
+    UNCLEAR = "UNCLEAR"
+    DONT_KNOW = "DONT_KNOW"
+    OFF_TOPIC = "OFF_TOPIC"
+
+
+class AnswerQuality(str, Enum):
+    STRONG = "STRONG"
+    OK = "OK"
+    WEAK = "WEAK"
+    NONE = "NONE"
 
 
 class InterviewConfig(BaseModel):
@@ -43,18 +59,29 @@ class AskedQuestion(BaseModel):
     key_points: List[str] = []
 
 
-class PlanItem(BaseModel):
+class PlannedItem(BaseModel):
+    """One topic as the planner writes it (Structured Outputs allow no defaults)."""
+
     topic: str = Field(description='Short label, e.g. "React hooks"')
     question_type: QuestionKind
     difficulty: Difficulty
     focus: str = Field(description="What this topic should probe and why it matters")
+    anchor: str = Field(
+        description="One concrete detail from the candidate's resume or profile "
+        "(company, project, metric, technology) the interviewer mentions when "
+        "asking; empty if nothing fits"
+    )
+
+
+class PlanItem(PlannedItem):
+    anchor: str = ""
 
 
 class InterviewPlan(BaseModel):
     resume_brief: str = Field(
         description="3-5 sentence summary of the candidate relevant to this role"
     )
-    items: List[PlanItem]
+    items: List[PlannedItem]
 
 
 class Rubric(BaseModel):
@@ -68,6 +95,12 @@ class InterviewerDecision(BaseModel):
         description="One sentence summarising the candidate's last answer; "
         "empty string when there is no previous answer"
     )
+    answer_type: AnswerType = Field(
+        description="What the last answer was; ANSWER when there is none yet"
+    )
+    answer_quality: AnswerQuality = Field(
+        description="How strong the last answer was; NONE when there is none yet"
+    )
     missing_key_points: List[str] = Field(
         description="Key points of the last question the answer did not cover; "
         "empty list when it covered them or there is no previous answer"
@@ -77,17 +110,31 @@ class InterviewerDecision(BaseModel):
         description="Why this answer needs probing, naming the exact claim, "
         "technique or gap; empty string unless the action is FOLLOW_UP"
     )
-    question_text: str
+    reaction: str = Field(
+        description="What the interviewer says before the question: the greeting "
+        "on the first question, otherwise at most one short human sentence"
+    )
+    question_text: str = Field(description="Exactly one question")
     difficulty: Difficulty
     rubric: Rubric
 
 
-class AnswerEvaluation(BaseModel):
-    covered_points: List[str] = Field(
-        description="Rubric key points the answer covered"
+class ClosingMessage(BaseModel):
+    message: str = Field(description="The interviewer's closing words, 2-3 sentences")
+
+
+class PointCheck(BaseModel):
+    point: str = Field(description="One rubric key point, copied as written")
+    covered: bool
+    evidence: str = Field(
+        description="A short quote from the answer that shows the point was covered; "
+        "empty string when it was not"
     )
-    missed_points: List[str] = Field(
-        description="Rubric key points the answer did not cover"
+
+
+class AnswerEvaluation(BaseModel):
+    point_checks: List[PointCheck] = Field(
+        description="One entry per rubric key point, decided before any score"
     )
     score: float = Field(description="Overall score for the answer, 0-10")
     technical_score: float = Field(description="Correctness and depth, 0-10")
@@ -104,6 +151,10 @@ class AnswerEvaluation(BaseModel):
     feedback: str = Field(
         description="2-3 sentences of feedback addressed to the candidate"
     )
+    model_answer: str = Field(
+        description="What a strong answer at this experience level sounds like, "
+        "3-5 spoken-style sentences"
+    )
 
 
 class ReportNarrative(BaseModel):
@@ -115,6 +166,14 @@ class ReportNarrative(BaseModel):
     weaknesses: List[str] = Field(description="2-4 recurring gaps across the answers")
     improvement_suggestions: List[str] = Field(
         description="3-5 specific, actionable things to work on before the next interview"
+    )
+    readiness_verdict: str = Field(
+        description="One honest sentence on how ready the candidate is for this role "
+        'and level, e.g. "Almost ready for 2-year backend roles: the basics are '
+        'solid, but you need to explain trade-offs."'
+    )
+    top_priorities: List[str] = Field(
+        description="The 3 most important things to fix first, most important first"
     )
 
 
@@ -128,6 +187,10 @@ class EngineState(BaseModel):
     followups_total: int = 0
     # One line per answered question, oldest first
     running_summary: List[str] = []
+    # Times the current question was repeated or reworded; resets on a new question
+    clarifications_used: int = 0
+    # What the interviewer said at the end, saved when the interview finishes
+    closing_message: str = ""
 
 
 class NextQuestion(BaseModel):
@@ -137,6 +200,8 @@ class NextQuestion(BaseModel):
     topic: str
     rubric: Rubric
     is_followup: bool
+    # The current question reworded: replaces its text, nothing is scored or added
+    is_rephrase: bool = False
 
 
 class InterviewerResult(BaseModel):

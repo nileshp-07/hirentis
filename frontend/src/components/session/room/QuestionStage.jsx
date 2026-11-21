@@ -1,12 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CornerDownRight, Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import InterviewerOrb, { OrbStatusPill } from './InterviewerOrb';
-import { DIFFICULTY_STYLES, QUESTION_TYPE_LABELS, toTitleCase } from './format';
 
 const WORD_DELAY = 0.045;
 
@@ -52,26 +51,9 @@ const QuestionStage = ({
           transition={{ duration: 0.35 }}
           className="mt-8 w-full"
         >
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {question.isFollowup ? (
-              <Badge className="gap-1 border-primary/25 bg-primary/10 text-primary">
-                <CornerDownRight />
-                Follow-up to Q{question.mainNumber}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-muted-foreground">
-                Question {question.mainNumber} of {totalQuestions}
-              </Badge>
-            )}
+          <div className="flex justify-center">
             <Badge variant="outline" className="text-muted-foreground">
-              {QUESTION_TYPE_LABELS[question.question_type] ??
-                toTitleCase(question.question_type)}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={cn(DIFFICULTY_STYLES[question.difficulty])}
-            >
-              {toTitleCase(question.difficulty)}
+              Question {question.mainNumber} of {totalQuestions}
             </Badge>
           </div>
 

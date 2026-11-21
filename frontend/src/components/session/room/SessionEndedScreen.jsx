@@ -78,9 +78,17 @@ const SessionEndedScreen = ({ session, questions, interviewId }) => {
             'Interview ended'
           )}
         </h1>
+        {isCompleted && session.closing_message && (
+          <blockquote className="mx-auto mt-4 max-w-md rounded-xl border border-border bg-secondary/30 px-4 py-3 text-left text-sm italic leading-relaxed text-secondary-foreground">
+            “{session.closing_message}”
+            <footer className="mt-2 text-xs not-italic text-muted-foreground">
+              Hirentis AI Interviewer
+            </footer>
+          </blockquote>
+        )}
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
           {isCompleted
-            ? 'Great work! Thanks for taking the time to practice. Your answers are being evaluated and your detailed report will be ready soon.'
+            ? 'Your answers are being evaluated and your detailed report will be ready soon.'
             : hasReport
               ? 'You ended this interview early. Your report will cover the answers you gave, and you can start a fresh attempt anytime.'
               : 'You ended this interview early. Your answers so far are saved, and you can start a fresh attempt anytime.'}

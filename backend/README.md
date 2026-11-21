@@ -153,6 +153,22 @@ that data to Langfuse is acceptable.
 
 ---
 
+## 🧪 7. Tests and the interview simulation
+
+```bash
+# Rules of the interview engine, scoring and report weighting (fast, free, no AI calls)
+python -m unittest discover -s tests -t .
+
+# A whole interview with a simulated candidate, scored at the end (about 25 AI calls).
+# Re-run after changing a prompt or a rule and compare the output.
+python -m scripts.simulate_interview
+```
+
+When a release adds a migration, run `alembic upgrade head` against the production
+database **before** deploying the new code; the Docker image does not migrate on start.
+
+---
+
 ## 📂 Project Flow Checklist
 When actively developing on this server, follow this general flow:
 

@@ -27,6 +27,7 @@ import TranscriptPanel from '@/components/dashboard/report/TranscriptPanel';
 import {
   AiSummaryCard,
   InsightCards,
+  ReadinessCard,
 } from '@/components/dashboard/report/InsightSections';
 import {
   ScoreTrendChart,
@@ -187,6 +188,13 @@ export default function InterviewReportPage({ params }) {
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <p>{partialNotes.join(' ')}</p>
               </div>
+            )}
+
+            {report.readinessVerdict && (
+              <ReadinessCard
+                verdict={report.readinessVerdict}
+                priorities={report.topPriorities}
+              />
             )}
 
             <ScoreCards scores={scores} />
