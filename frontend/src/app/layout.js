@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import ServerWakeNotice from '@/components/layout/ServerWakeNotice';
 import { Toaster } from '@/components/ui/sonner';
 import { StoreProvider } from '@/redux/StoreProvider';
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
         <ClerkProvider>
           <StoreProvider>{children}</StoreProvider>
         </ClerkProvider>
+        <ServerWakeNotice />
         <Toaster richColors position="bottom-right" />
       </body>
     </html>
