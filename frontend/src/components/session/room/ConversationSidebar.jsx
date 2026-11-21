@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CornerDownRight, MessagesSquare, Sparkles, X } from 'lucide-react';
+import { MessagesSquare, Sparkles, X } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -21,14 +21,7 @@ const InterviewerMessage = ({ question, isCurrent }) => (
       )}
     >
       <div className="mb-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-        {question.isFollowup ? (
-          <span className="inline-flex items-center gap-1 text-primary">
-            <CornerDownRight className="h-3 w-3" />
-            Follow-up to Q{question.mainNumber}
-          </span>
-        ) : (
-          <span>Question {question.mainNumber}</span>
-        )}
+        <span>Question {question.mainNumber}</span>
         {isCurrent && (
           <span className="rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-semibold text-primary">
             Current

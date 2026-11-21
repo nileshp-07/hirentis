@@ -1,10 +1,14 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel
+
+if TYPE_CHECKING:
+    from app.models.profile import Profile
+    from app.models.resume import Resume
 
 
 class UserRole(str, Enum):

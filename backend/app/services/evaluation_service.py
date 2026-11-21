@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import List
+from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
@@ -23,6 +23,14 @@ def _clamp(value: float) -> float:
     return round(min(MAX_SCORE, max(MIN_SCORE, float(value))), 1)
 
 
+def _earlier_exchange(question: InterviewQuestion) -> Optional[Tuple[str, str]]:
+    """For a follow-up, the question and answer it builds on."""
+    parent = question.parent
+    if parent is None or parent.response is None:
+        return None
+    return parent.question_text, parent.response.response_text
+
+
 def _apply(evaluation: ResponseEvaluation, scored: AnswerEvaluation) -> None:
     evaluation.score = _clamp(scored.score)
     evaluation.technical_score = _clamp(scored.technical_score)
@@ -33,6 +41,8 @@ def _apply(evaluation: ResponseEvaluation, scored: AnswerEvaluation) -> None:
     evaluation.weaknesses = scored.weaknesses
     evaluation.improvements = scored.improvements
     evaluation.ai_feedback = scored.feedback
+    evaluation.point_checks = [check.model_dump() for check in scored.point_checks]
+    evaluation.model_answer = scored.model_answer
     evaluation.error_message = None
     evaluation.status = EvaluationStatus.COMPLETED
 
@@ -75,6 +85,8 @@ def score_response(response_id: uuid.UUID) -> bool:
                 rubric=question.rubric,
                 topic=question.topic,
                 difficulty=question.difficulty.value,
+                question_type=question.question_type.value,
+                earlier=_earlier_exchange(question),
             )
         _apply(evaluation, scored)
         db.commit()

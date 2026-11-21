@@ -25,7 +25,7 @@ from app.models.interview_question import (
 )
 from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
-from app.models.response_evaluation import ResponseEvaluation
+from app.models.response_evaluation import EvaluationStatus, ResponseEvaluation
 from app.schemas.session import AnswerSubmit, SessionAttempt, SessionSummary
 from app.services.profile_service import get_candidate_profile
 
@@ -97,13 +97,64 @@ def _to_question_row(
     )
 
 
+HISTORY_TOPICS = 15
+HISTORY_QUESTIONS = 80
+WEAK_TOPIC_SCORE = 6.0
+
+
+def _practice_history(db: Session, user_id: uuid.UUID) -> Optional[str]:
+    """The topics the candidate was asked before and where they scored low, so a
+    new attempt asks about new things and revisits the weak areas."""
+    rows = (
+        db.query(InterviewQuestion.topic, ResponseEvaluation.score)
+        .join(InterviewSession, InterviewQuestion.session_id == InterviewSession.id)
+        .outerjoin(
+            InterviewResponse, InterviewResponse.question_id == InterviewQuestion.id
+        )
+        .outerjoin(
+            ResponseEvaluation,
+            (ResponseEvaluation.response_id == InterviewResponse.id)
+            & (ResponseEvaluation.status == EvaluationStatus.COMPLETED),
+        )
+        .filter(
+            InterviewSession.user_id == user_id,
+            InterviewQuestion.topic.isnot(None),
+            InterviewQuestion.question_type != QuestionType.FOLLOWUP,
+        )
+        .order_by(InterviewQuestion.created_at.desc())
+        .limit(HISTORY_QUESTIONS)
+        .all()
+    )
+    if not rows:
+        return None
+
+    asked: List[str] = []
+    scores: dict = {}
+    for topic, score in rows:
+        if topic not in asked:
+            asked.append(topic)
+        if score is not None:
+            scores.setdefault(topic, []).append(score)
+
+    weak = [
+        f"{topic} (average {sum(values) / len(values):.1f}/10)"
+        for topic, values in scores.items()
+        if sum(values) / len(values) < WEAK_TOPIC_SCORE
+    ]
+    lines = ["Topics asked in earlier attempts: " + "; ".join(asked[:HISTORY_TOPICS])]
+    if weak:
+        lines.append("Weak areas to revisit from a new angle: " + "; ".join(weak))
+    return "\n".join(lines)
+
+
 def _prepare_first_question(
     config: InterviewConfig,
     resume_data: dict,
     profile: Optional[CandidateProfile],
+    practice_history: Optional[str] = None,
 ) -> Tuple[dict, NextQuestion]:
     try:
-        state = plan_interview(config, resume_data, profile)
+        state = plan_interview(config, resume_data, profile, practice_history)
         result = decide_next_question(config, state, [])
     except LLMError:
         raise HTTPException(
@@ -138,13 +189,14 @@ def start_session(
     config = _build_engine_config(interview)
     resume_data = (interview.resume.parsed_data if interview.resume else None) or {}
     profile = get_candidate_profile(db, user_id)
+    practice_history = _practice_history(db, user_id)
     existing_id = existing.id if existing else None
     session_id = existing_id or uuid.uuid4()
     db.commit()
 
     with trace_owner(user_id=user_id, session_id=session_id):
         context_memory, first_question = _prepare_first_question(
-            config, resume_data, profile
+            config, resume_data, profile, practice_history
         )
 
     session = db.get(InterviewSession, existing_id) if existing_id else None
@@ -312,6 +364,17 @@ def submit_answer(
     session = db.get(InterviewSession, session_id)
     if session.status != InterviewSessionStatus.IN_PROGRESS:
         raise HTTPException(status_code=409, detail="This interview is not in progress")
+
+    if result.question is not None and result.question.is_rephrase:
+        current = db.get(InterviewQuestion, question_id)
+        if current is None or current.response is not None:
+            raise HTTPException(
+                status_code=409, detail="This question has already been answered"
+            )
+        current.question_text = result.question.question_text
+        session.context_memory = result.state.model_dump()
+        db.commit()
+        return get_session(db, user_id, session_id)
 
     db.add(
         InterviewResponse(

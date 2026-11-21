@@ -102,8 +102,13 @@ const AnswerComposer = ({
       (Date.now() - startedAtRef.current) / 1000
     );
     const submitted = await onSubmit({ text: trimmed, responseTimeSeconds });
-    if (submitted) writeDraft(questionId, '');
-    else textareaRef.current?.focus();
+    if (submitted) {
+      writeDraft(questionId, '');
+      // When the interviewer rewords the same question the composer stays mounted
+      setText('');
+      startedAtRef.current = Date.now();
+      setElapsed(0);
+    } else textareaRef.current?.focus();
   };
 
   const handleKeyDown = (event) => {

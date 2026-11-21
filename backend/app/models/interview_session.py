@@ -48,6 +48,10 @@ class InterviewSession(BaseModel):
 
     context_memory: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
+    @property
+    def closing_message(self) -> Optional[str]:
+        return (self.context_memory or {}).get("closing_message") or None
+
     interview: Mapped["Interview"] = relationship(
         "Interview", back_populates="sessions"
     )
