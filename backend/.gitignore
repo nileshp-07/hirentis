@@ -42,6 +42,3 @@ Thumbs.db
 # Ruff / Linters / Type checking
 .ruff_cache/
 .mypy_cache/
-
-# UV / Package Managers
-uv.lock
