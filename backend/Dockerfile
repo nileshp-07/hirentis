@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=180 \
     PATH="/app/.venv/bin:$PATH" \
     ENV=production
 
@@ -27,6 +28,7 @@ RUN python -m piper.download_voices "${TTS_VOICE}" --download-dir storage/voices
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY start.sh ./
 
 RUN useradd --system --no-create-home app
 USER app
@@ -34,4 +36,4 @@ USER app
 EXPOSE 8000
 
 # Hosts such as Render and Railway pass the port in $PORT
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "start.sh"]
