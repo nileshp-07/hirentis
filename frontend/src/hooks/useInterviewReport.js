@@ -52,6 +52,8 @@ const toReportView = (report) => {
       weaknesses: question.weaknesses,
       improvements: question.improvements,
       feedback: question.feedback,
+      pointChecks: question.point_checks ?? [],
+      modelAnswer: question.model_answer,
     }));
 
   const transcript = asked.flatMap((question) => {
@@ -108,6 +110,8 @@ const toReportView = (report) => {
     weaknesses: report.weaknesses,
     suggestions: report.improvement_suggestions,
     aiSummary: report.ai_summary,
+    readinessVerdict: report.readiness_verdict,
+    topPriorities: report.top_priorities ?? [],
     transcript,
   };
 };

@@ -72,6 +72,8 @@ class InterviewReport(BaseModel):
         JSON, default=list, nullable=False
     )
     ai_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    readiness_verdict: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    top_priorities: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
 
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 

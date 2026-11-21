@@ -8,6 +8,8 @@ import {
   CornerDownRight,
   Lightbulb,
   MessageSquareQuote,
+  Target,
+  XCircle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -39,6 +41,41 @@ const FeedbackList = ({ title, items, icon: Icon, tone }) => (
     ) : (
       <p className="text-xs italic text-muted-foreground/70">None noted.</p>
     )}
+  </div>
+);
+
+const KeyPoints = ({ checks }) => (
+  <div className="rounded-xl border border-border p-3.5">
+    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      Key points a strong answer covers
+    </p>
+    <ul className="space-y-1.5">
+      {checks.map((check) => (
+        <li
+          key={check.point}
+          className="flex items-start gap-2 text-xs leading-relaxed"
+        >
+          {check.covered ? (
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+          ) : (
+            <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+          )}
+          <span
+            className={
+              check.covered ? 'text-muted-foreground' : 'text-foreground'
+            }
+          >
+            {check.point}
+            {check.covered && check.evidence && (
+              <span className="italic text-muted-foreground/70">
+                {' '}
+                — you said “{check.evidence}”
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
   </div>
 );
 
@@ -155,11 +192,27 @@ const QuestionItem = ({ question, index }) => {
                   />
                 </div>
 
+                {question.pointChecks.length > 0 && (
+                  <KeyPoints checks={question.pointChecks} />
+                )}
+
                 {question.feedback && (
                   <div className="flex gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
                     <MessageSquareQuote className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                     <p className="text-sm leading-relaxed text-secondary-foreground">
                       {question.feedback}
+                    </p>
+                  </div>
+                )}
+
+                {question.modelAnswer && (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-600 dark:text-emerald-400">
+                      <Target className="h-3 w-3" />
+                      What a strong answer sounds like
+                    </p>
+                    <p className="text-sm leading-relaxed text-secondary-foreground">
+                      {question.modelAnswer}
                     </p>
                   </div>
                 )}

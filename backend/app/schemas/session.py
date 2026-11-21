@@ -46,6 +46,8 @@ class SessionSummary(BaseModel):
 
 class SessionDetail(SessionSummary):
     questions: List[SessionQuestion] = []
+    # What the interviewer said to wrap up; set once the interview finishes
+    closing_message: Optional[str] = None
 
 
 class SessionAttempt(SessionSummary):
@@ -86,6 +88,9 @@ class QuestionFeedback(BaseModel):
     weaknesses: List[str] = []
     improvements: List[str] = []
     feedback: Optional[str] = None
+    # Each key point of the question and whether the answer covered it
+    point_checks: List[dict] = []
+    model_answer: Optional[str] = None
 
 
 class ReportOut(BaseModel):
@@ -110,4 +115,6 @@ class ReportOut(BaseModel):
     weaknesses: List[str] = []
     improvement_suggestions: List[str] = []
     ai_summary: Optional[str] = None
+    readiness_verdict: Optional[str] = None
+    top_priorities: List[str] = []
     questions: List[QuestionFeedback] = []

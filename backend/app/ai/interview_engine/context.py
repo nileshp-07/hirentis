@@ -2,7 +2,12 @@ import json
 from typing import Dict, List, Optional, Set
 
 from app.ai.interview_engine import prompts
-from app.ai.interview_engine.policy import followup_budget, planned_question_count
+from app.ai.interview_engine.policy import (
+    INTERVIEWER_NAME,
+    followup_budget,
+    includes_intro,
+    planned_question_count,
+)
 from app.ai.interview_engine.schemas import (
     Action,
     CandidateProfile,
@@ -12,9 +17,9 @@ from app.ai.interview_engine.schemas import (
     AskedQuestion,
 )
 
-RECENT_QUESTIONS = 2
+RECENT_QUESTIONS = 3
 MAX_ANSWER_CHARS = 4000
-ACTION_ORDER = [Action.FOLLOW_UP, Action.NEXT_TOPIC, Action.END]
+ACTION_ORDER = [Action.FOLLOW_UP, Action.REPHRASE, Action.NEXT_TOPIC, Action.END]
 
 Message = Dict[str, str]
 
@@ -32,7 +37,10 @@ def format_candidate_answer(answer: str) -> str:
 def _format_plan_item(item: Optional[PlanItem]) -> str:
     if item is None:
         return "None"
-    return f"{item.topic} ({item.question_type}, {item.difficulty}) - {item.focus}"
+    anchor = f" [mention: {item.anchor}]" if item.anchor else ""
+    return (
+        f"{item.topic} ({item.question_type}, {item.difficulty}) - {item.focus}{anchor}"
+    )
 
 
 def _format_profile(profile: Optional[CandidateProfile]) -> str:
@@ -44,6 +52,7 @@ def build_planner_messages(
     config: InterviewConfig,
     resume_data: dict,
     profile: Optional[CandidateProfile] = None,
+    practice_history: Optional[str] = None,
 ) -> List[Message]:
     return [
         {"role": "system", "content": prompts.PLANNER_SYSTEM_PROMPT},
@@ -51,6 +60,7 @@ def build_planner_messages(
             "role": "user",
             "content": prompts.PLANNER_USER_PROMPT.format(
                 total_questions=config.total_questions,
+                include_intro="yes" if includes_intro(config) else "no",
                 role=config.role,
                 experience_level=_or_none(config.experience_level),
                 interview_type=config.interview_type,
@@ -58,6 +68,7 @@ def build_planner_messages(
                 job_description=_or_none(config.job_description),
                 resume_data=json.dumps(resume_data or {}, indent=2),
                 profile=_format_profile(profile),
+                practice_history=_or_none(practice_history),
             ),
         },
     ]
@@ -78,6 +89,7 @@ def build_interviewer_messages(
         interview_type=config.interview_type,
         tech_stack=", ".join(config.tech_stack) or "None",
         job_description=_or_none(config.job_description),
+        planned_questions=planned_question_count(state, config),
         resume_brief=_or_none(state.resume_brief),
         plan=plan_text or "None",
     )
@@ -121,6 +133,7 @@ def build_interviewer_messages(
         last_key_points=", ".join(answered.key_points) if answered else "None",
         followups_total=state.followups_total,
         followup_budget=followup_budget(config),
+        clarifications_used=state.clarifications_used,
         followup_used="yes" if state.followup_used else "no",
         allowed_actions=format_actions(allowed),
         summary_instruction=(
@@ -128,10 +141,16 @@ def build_interviewer_messages(
             if history and history[-1].answer_text
             else prompts.SUMMARY_NOT_NEEDED
         ),
+        opening_instruction="" if history else prompts.OPENING_INSTRUCTION,
     )
 
     return [
-        {"role": "system", "content": prompts.INTERVIEWER_SYSTEM_PROMPT},
+        {
+            "role": "system",
+            "content": prompts.INTERVIEWER_SYSTEM_PROMPT.format(
+                interviewer_name=INTERVIEWER_NAME
+            ),
+        },
         {"role": "user", "content": context},
         {"role": "user", "content": progress_text},
     ]
@@ -139,3 +158,23 @@ def build_interviewer_messages(
 
 def format_actions(allowed: Set[Action]) -> str:
     return ", ".join(a.value for a in ACTION_ORDER if a in allowed)
+
+
+def build_closing_messages(
+    config: InterviewConfig, state: EngineState
+) -> List[Message]:
+    return [
+        {
+            "role": "system",
+            "content": prompts.CLOSING_SYSTEM_PROMPT.format(
+                interviewer_name=INTERVIEWER_NAME
+            ),
+        },
+        {
+            "role": "user",
+            "content": prompts.CLOSING_USER_PROMPT.format(
+                role=config.role,
+                running_summary="\n".join(state.running_summary) or "None",
+            ),
+        },
+    ]

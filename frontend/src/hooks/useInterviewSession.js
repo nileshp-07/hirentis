@@ -55,12 +55,15 @@ export const useInterviewSession = (sessionId) => {
   const submitAnswer = async ({ text, responseTimeSeconds }) => {
     if (!currentQuestion) return false;
     try {
-      await submitAnswerMutation({
+      const updated = await submitAnswerMutation({
         sessionId,
         questionId: currentQuestion.id,
         response_text: text,
         response_time_seconds: responseTimeSeconds,
       }).unwrap();
+      if (updated?.questions?.at(-1)?.id === currentQuestion.id) {
+        toast.info('The interviewer put the question another way.');
+      }
       return true;
     } catch (err) {
       if (err?.status === 409) {

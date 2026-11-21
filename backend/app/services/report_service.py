@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from statistics import mean
+
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session, selectinload
@@ -9,7 +9,11 @@ from sqlalchemy.sql import func
 
 from app.ai.interview_engine import write_report_narrative
 from app.ai.llm.tracing import trace_owner
-from app.models.interview_question import InterviewQuestion
+from app.models.interview_question import (
+    InterviewQuestion,
+    QuestionDifficulty,
+    QuestionType,
+)
 from app.models.interview_report import InterviewReport, ReportStatus
 from app.models.interview_response import InterviewResponse
 from app.models.interview_session import InterviewSession, InterviewSessionStatus
@@ -18,6 +22,13 @@ from app.db.session import SessionLocal
 from app.services.session_service import _build_engine_config, get_session
 
 logger = logging.getLogger(__name__)
+
+DIFFICULTY_WEIGHT = {
+    QuestionDifficulty.EASY: 0.8,
+    QuestionDifficulty.MEDIUM: 1.0,
+    QuestionDifficulty.HARD: 1.25,
+}
+FOLLOWUP_WEIGHT = 0.6
 
 SCORE_FIELDS = (
     "technical_score",
@@ -71,30 +82,43 @@ def _unscored_count(session: InterviewSession) -> int:
     )
 
 
+def question_weight(question: InterviewQuestion) -> float:
+    weight = DIFFICULTY_WEIGHT.get(question.difficulty, 1.0)
+    if question.question_type == QuestionType.FOLLOWUP:
+        weight *= FOLLOWUP_WEIGHT
+    return weight
+
+
+def _weighted_mean(pairs: List[Tuple[float, float]]) -> float:
+    """Mean of (value, weight) pairs."""
+    return round(sum(v * w for v, w in pairs) / sum(w for _, w in pairs), 1)
+
+
 def aggregate_scores(
     questions: List[InterviewQuestion],
 ) -> Tuple[Dict[str, float], Dict[str, float]]:
-    """Average the answer scores overall and per topic. Plain maths, no LLM."""
-    evaluations = [question.response.evaluation for question in questions]
-
+    """Average the answer scores overall and per topic, weighted by question
+    difficulty. Plain maths, no LLM."""
     scores: Dict[str, float] = {}
-    overall = [e.score for e in evaluations if e.score is not None]
-    if overall:
-        scores["overall_score"] = round(mean(overall), 1)
-    for field in SCORE_FIELDS:
-        values = [
-            getattr(e, field) for e in evaluations if getattr(e, field) is not None
+    for field in ("score",) + SCORE_FIELDS:
+        pairs = [
+            (getattr(q.response.evaluation, field), question_weight(q))
+            for q in questions
+            if getattr(q.response.evaluation, field) is not None
         ]
-        if values:
-            scores[field] = round(mean(values), 1)
+        if pairs:
+            key = "overall_score" if field == "score" else field
+            scores[key] = _weighted_mean(pairs)
 
-    by_topic: Dict[str, List[float]] = {}
+    by_topic: Dict[str, List[Tuple[float, float]]] = {}
     for question in questions:
         score = question.response.evaluation.score
         if question.topic and score is not None:
-            by_topic.setdefault(question.topic, []).append(score)
+            by_topic.setdefault(question.topic, []).append(
+                (score, question_weight(question))
+            )
     topic_scores = {
-        topic: round(mean(values), 1) for topic, values in sorted(by_topic.items())
+        topic: _weighted_mean(pairs) for topic, pairs in sorted(by_topic.items())
     }
     return scores, topic_scores
 
@@ -104,11 +128,17 @@ def _question_results(questions: List[InterviewQuestion]) -> List[str]:
     results = []
     for question in questions:
         evaluation = question.response.evaluation
+        missed = [
+            check["point"]
+            for check in evaluation.point_checks or []
+            if not check.get("covered")
+        ]
         results.append(
             f"- [{question.topic or 'general'}] {question.question_text} "
             f"-> score {evaluation.score}; "
             f"strengths: {', '.join(evaluation.strengths) or 'none'}; "
-            f"gaps: {', '.join(evaluation.weaknesses) or 'none'}"
+            f"gaps: {', '.join(evaluation.weaknesses) or 'none'}; "
+            f"key points missed: {'; '.join(missed) or 'none'}"
         )
     return results
 
@@ -153,6 +183,8 @@ def generate_report(session_id: uuid.UUID, allow_partial: bool = False) -> bool:
         report.weaknesses = narrative.weaknesses
         report.improvement_suggestions = narrative.improvement_suggestions
         report.ai_summary = narrative.summary
+        report.readiness_verdict = narrative.readiness_verdict
+        report.top_priorities = narrative.top_priorities
         report.error_message = None
         report.status = ReportStatus.COMPLETED
         db.commit()
@@ -272,6 +304,8 @@ def to_report_payload(
                 "weaknesses": evaluation.weaknesses if evaluation else [],
                 "improvements": evaluation.improvements if evaluation else [],
                 "feedback": evaluation.ai_feedback if evaluation else None,
+                "point_checks": (evaluation.point_checks or []) if evaluation else [],
+                "model_answer": evaluation.model_answer if evaluation else None,
             }
         )
 
@@ -295,5 +329,7 @@ def to_report_payload(
         "weaknesses": report.weaknesses if report else [],
         "improvement_suggestions": report.improvement_suggestions if report else [],
         "ai_summary": report.ai_summary if report else None,
+        "readiness_verdict": report.readiness_verdict if report else None,
+        "top_priorities": (report.top_priorities or []) if report else [],
         "questions": questions,
     }

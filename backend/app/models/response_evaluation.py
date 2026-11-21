@@ -66,6 +66,11 @@ class ResponseEvaluation(BaseModel):
     improvements: Mapped[List[str]] = mapped_column(JSON, default=list, nullable=False)
     ai_feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # [{"point": "...", "covered": true, "evidence": "quote from the answer"}]
+    point_checks: Mapped[Optional[List[dict]]] = mapped_column(JSON, nullable=True)
+    # What a strong answer sounds like; shown next to the candidate's own answer
+    model_answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     response: Mapped["InterviewResponse"] = relationship(
