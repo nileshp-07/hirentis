@@ -14,19 +14,19 @@ const faqs = [
   },
   {
     q: 'Is my resume data private?',
-    a: 'Absolutely. Your resume and interview data are encrypted and never shared with third parties. We use your resume solely to generate personalized interview questions during your sessions.',
+    a: 'Your resume and answers are used only to run your interviews and build your reports. To write questions and score answers, the text is sent to OpenAI, and those AI calls are logged in our monitoring tool (Langfuse) so we can fix problems.',
   },
   {
     q: 'How are answers evaluated?',
-    a: 'Each answer is evaluated across multiple dimensions including technical accuracy, communication clarity, problem-solving approach, and depth of knowledge. You receive a detailed breakdown after every session.',
+    a: 'Each answer is scored on technical accuracy, communication, problem-solving and confidence, with strengths and suggested improvements. You receive a detailed breakdown after every session.',
   },
   {
     q: 'Can I practice interviews multiple times?',
-    a: 'Yes! You can take unlimited practice interviews. Our AI generates fresh questions each time so you never repeat the same interview twice. Track your improvement over time with our analytics dashboard.',
+    a: 'Yes! Retake any interview as often as you like, within a fair-use limit per hour. Each attempt gets fresh questions, and the dashboard tracks your improvement over time.',
   },
   {
     q: 'What types of interviews are supported?',
-    a: 'We support technical coding interviews, system design interviews, behavioral interviews, and role-specific interviews for frontend, backend, full-stack, data science, and more.',
+    a: 'Technical, system design, behavioral and HR interviews, for any role you set: frontend, backend, full-stack, data science and more. Live coding exercises are not supported yet.',
   },
 ];
 
